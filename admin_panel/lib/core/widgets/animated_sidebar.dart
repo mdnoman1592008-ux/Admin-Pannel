@@ -181,6 +181,7 @@ class _AnimatedSidebarState extends State<AnimatedSidebar>
         _buildNavItem(8, Icons.cloud_upload_rounded, 'Storage'),
         _buildNavItem(9, Icons.history_rounded, 'Audit Logs'),
         _buildNavItem(10, Icons.tune_rounded, 'Remote Config'),
+        _buildNavItem(11, Icons.verified_rounded, 'Release Center'),
       ],
     );
   }

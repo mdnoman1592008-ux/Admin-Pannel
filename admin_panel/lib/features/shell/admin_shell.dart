@@ -13,6 +13,7 @@ import '../analytics/analytics_screen.dart';
 import '../storage/storage_screen.dart';
 import '../audit/audit_screen.dart';
 import '../remote_config/remote_config_screen.dart';
+import '../release_center/release_center_screen.dart';
 
 /// Admin Shell — Ether Cinema Admin Panel
 /// Main layout: floating sidebar + top bar + animated content area
@@ -44,6 +45,7 @@ class _AdminShellState extends State<AdminShell>
     StorageScreen(),
     AuditScreen(),
     RemoteConfigScreen(),
+    ReleaseCenterScreen(),
   ];
 
   static final _pageTitles = [
@@ -58,6 +60,7 @@ class _AdminShellState extends State<AdminShell>
     ('Storage', 'Supabase Storage explorer'),
     ('Audit Logs', 'System activity timeline'),
     ('Remote Config', 'Live configuration editor'),
+    ('Release Center', 'Continuous deployment & audit readiness'),
   ];
 
   @override
