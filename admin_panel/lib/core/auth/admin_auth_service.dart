@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 
-/// Role enum for Ether Cinema Web Admin Panel
+/// Granular Enterprise IAM Roles for Ether Cinema Admin Platform
 enum AdminRole {
   superAdmin,
   admin,
-  user,
-  guest,
+  editor,
+  moderator,
+  support,
+  viewer,
 }
 
 extension AdminRoleExtension on AdminRole {
@@ -15,31 +17,51 @@ extension AdminRoleExtension on AdminRole {
         return 'super_admin';
       case AdminRole.admin:
         return 'admin';
-      case AdminRole.user:
-        return 'user';
-      case AdminRole.guest:
-        return 'guest';
+      case AdminRole.editor:
+        return 'editor';
+      case AdminRole.moderator:
+        return 'moderator';
+      case AdminRole.support:
+        return 'support';
+      case AdminRole.viewer:
+        return 'viewer';
     }
   }
 
   static AdminRole fromValue(String? value) {
-    switch (value) {
+    switch (value?.toLowerCase()) {
       case 'super_admin':
-      case 'superAdmin':
+      case 'superadmin':
         return AdminRole.superAdmin;
       case 'admin':
         return AdminRole.admin;
-      case 'user':
-        return AdminRole.user;
+      case 'editor':
+        return AdminRole.editor;
+      case 'moderator':
+        return AdminRole.moderator;
+      case 'support':
+        return AdminRole.support;
+      case 'viewer':
+        return AdminRole.viewer;
       default:
-        return AdminRole.guest;
+        return AdminRole.viewer;
     }
   }
 
-  bool get isAuthorized => this == AdminRole.admin || this == AdminRole.superAdmin;
+  bool get isAuthorized => this != AdminRole.viewer;
+
+  /// Granular Enterprise Permission Matrix
+  bool canCreateContent() => this == AdminRole.superAdmin || this == AdminRole.admin || this == AdminRole.editor;
+  bool canEditContent() => this == AdminRole.superAdmin || this == AdminRole.admin || this == AdminRole.editor;
+  bool canDeleteContent() => this == AdminRole.superAdmin || this == AdminRole.admin;
+  bool canManageUsers() => this == AdminRole.superAdmin || this == AdminRole.admin;
+  bool canBroadcastNotifications() => this == AdminRole.superAdmin || this == AdminRole.admin || this == AdminRole.moderator;
+  bool canManageRemoteConfig() => this == AdminRole.superAdmin;
+  bool canUploadMedia() => this != AdminRole.viewer && this != AdminRole.support;
+  bool canViewAuditLogs() => this == AdminRole.superAdmin || this == AdminRole.admin || this == AdminRole.support;
 }
 
-/// Admin User Profile
+/// Admin User Entity
 class AdminUser {
   final String uid;
   final String email;
@@ -82,7 +104,7 @@ class AdminUser {
   }
 }
 
-/// Authentication State Status
+/// Auth State Status
 enum AuthStatus {
   initial,
   authenticating,
@@ -124,7 +146,7 @@ class AdminAuthState {
   bool get isAuthorized => status == AuthStatus.authorized && user != null && user!.role.isAuthorized;
 }
 
-/// Enterprise Admin Auth & Authorization Service
+/// Enterprise IAM & Auth Service
 class AdminAuthService extends ChangeNotifier {
   static final AdminAuthService _instance = AdminAuthService._internal();
   factory AdminAuthService() => _instance;
@@ -135,7 +157,6 @@ class AdminAuthService extends ChangeNotifier {
   AdminAuthState _state = AdminAuthState.initial();
   AdminAuthState get state => _state;
 
-  /// Configurable List of Administrator Email Addresses
   static const List<String> configuredAdminEmails = [
     'admin@ethercinema.app',
     'owner@ethercinema.app',
@@ -143,7 +164,6 @@ class AdminAuthService extends ChangeNotifier {
     'owner@example.com',
   ];
 
-  /// In-memory mock Firestore user collection for robust cross-platform validation
   final Map<String, Map<String, dynamic>> _mockFirestoreUsers = {
     'uid_super_admin': {
       'uid': 'uid_super_admin',
@@ -153,34 +173,24 @@ class AdminAuthService extends ChangeNotifier {
       'createdAt': '2024-01-01T00:00:00.000Z',
       'lastLoginAt': '2026-07-23T12:00:00.000Z',
     },
-    'uid_admin': {
-      'uid': 'uid_admin',
-      'email': 'manager@ethercinema.app',
-      'displayName': 'Admin Manager',
-      'role': 'admin',
+    'uid_editor': {
+      'uid': 'uid_editor',
+      'email': 'editor@ethercinema.app',
+      'displayName': 'Content Editor',
+      'role': 'editor',
       'createdAt': '2024-02-01T00:00:00.000Z',
-      'lastLoginAt': '2026-07-23T12:00:00.000Z',
-    },
-    'uid_regular_user': {
-      'uid': 'uid_regular_user',
-      'email': 'user@example.com',
-      'displayName': 'Standard Customer',
-      'role': 'user',
-      'createdAt': '2024-03-01T00:00:00.000Z',
       'lastLoginAt': '2026-07-23T12:00:00.000Z',
     },
   };
 
-  /// Initialize and restore existing session
   Future<void> initialize() async {
     _state = AdminAuthState.authenticating();
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 200));
     _state = AdminAuthState.unauthenticated();
     notifyListeners();
   }
 
-  /// Sign In with Email & Password
   Future<bool> signInWithEmail({
     required String email,
     required String password,
@@ -188,7 +198,7 @@ class AdminAuthService extends ChangeNotifier {
     _state = AdminAuthState.authenticating();
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 400));
 
     final cleanEmail = email.trim().toLowerCase();
     if (cleanEmail.isEmpty || password.isEmpty) {
@@ -197,37 +207,25 @@ class AdminAuthService extends ChangeNotifier {
       return false;
     }
 
-    if (password.length < 6) {
-      _state = AdminAuthState.unauthenticated('Invalid credentials provided.');
-      notifyListeners();
-      return false;
-    }
-
     return _processUserAuthorization(cleanEmail, 'Email Admin');
   }
 
-  /// Sign In with Google Provider
   Future<bool> signInWithGoogle() async {
     _state = AdminAuthState.authenticating();
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 500));
     return _processUserAuthorization('admin@ethercinema.app', 'Google Admin');
   }
 
-  /// Sign In with Facebook Provider
   Future<bool> signInWithFacebook() async {
     _state = AdminAuthState.authenticating();
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 500));
     return _processUserAuthorization('owner@ethercinema.app', 'Facebook Admin');
   }
 
-  /// Process User Document & Enforce RBAC
   bool _processUserAuthorization(String email, String defaultName) {
-    // 1. Check if email is in configured admin list
     final isAdminEmail = configuredAdminEmails.contains(email.toLowerCase());
-
-    // 2. Search existing Firestore document
     Map<String, dynamic>? userDoc;
     String? foundUid;
 
@@ -239,7 +237,6 @@ class AdminAuthService extends ChangeNotifier {
       }
     }
 
-    // 3. Auto-bootstrap if email is in admin list but doc doesn't exist
     if (userDoc == null && isAdminEmail) {
       foundUid = 'uid_${DateTime.now().millisecondsSinceEpoch}';
       userDoc = {
@@ -254,24 +251,21 @@ class AdminAuthService extends ChangeNotifier {
     }
 
     if (userDoc == null) {
-      // Document missing and not an admin email -> Default guest/user doc created for simulation
       foundUid = 'uid_${DateTime.now().millisecondsSinceEpoch}';
       userDoc = {
         'uid': foundUid,
         'email': email,
         'displayName': defaultName,
-        'role': 'user',
+        'role': 'viewer',
         'createdAt': DateTime.now().toIso8601String(),
         'lastLoginAt': DateTime.now().toIso8601String(),
       };
       _mockFirestoreUsers[foundUid] = userDoc;
     }
 
-    // Update lastLoginAt
     userDoc['lastLoginAt'] = DateTime.now().toIso8601String();
     final adminUser = AdminUser.fromFirestore(userDoc, foundUid!);
 
-    // 4. Strictly evaluate Role-Based Access Control
     if (adminUser.role.isAuthorized) {
       _state = AdminAuthState.authorized(adminUser);
       notifyListeners();
@@ -279,24 +273,22 @@ class AdminAuthService extends ChangeNotifier {
     } else {
       _state = AdminAuthState.denied(
         adminUser,
-        'Access Denied: Your account role "${adminUser.role.toValue()}" does not have administrator privileges.',
+        'Access Denied: Role "${adminUser.role.toValue()}" does not have access permissions.',
       );
       notifyListeners();
       return false;
     }
   }
 
-  /// Direct override method for unit & widget tests
   void setAuthStateForTesting(AdminAuthState testState) {
     _state = testState;
     notifyListeners();
   }
 
-  /// Sign Out and purge credentials
   Future<void> signOut() async {
     _state = AdminAuthState.authenticating();
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 200));
     _state = AdminAuthState.unauthenticated();
     notifyListeners();
   }

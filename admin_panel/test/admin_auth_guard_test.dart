@@ -29,7 +29,7 @@ void main() {
         uid: 'u_101',
         email: 'user@example.com',
         displayName: 'Regular User',
-        role: AdminRole.user,
+        role: AdminRole.viewer,
         createdAt: DateTime.now(),
         lastLoginAt: DateTime.now(),
       );
@@ -121,7 +121,7 @@ void main() {
         uid: 'u_101',
         email: 'user@example.com',
         displayName: 'Regular User',
-        role: AdminRole.user,
+        role: AdminRole.viewer,
         createdAt: DateTime.now(),
         lastLoginAt: DateTime.now(),
       );

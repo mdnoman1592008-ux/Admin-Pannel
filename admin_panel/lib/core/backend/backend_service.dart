@@ -398,4 +398,16 @@ class LiveBackendService extends ChangeNotifier {
 
     return results;
   }
+
+  @override
+  void dispose() {
+    _moviesController.close();
+    _seriesController.close();
+    _categoriesController.close();
+    _auditLogsController.close();
+    _notificationsController.close();
+    _remoteConfigController.close();
+    _storageFilesController.close();
+    super.dispose();
+  }
 }
