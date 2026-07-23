@@ -49,7 +49,7 @@ class _UsersScreenState extends State<UsersScreen> {
           const SizedBox(width: 10),
           Text('Live Firebase Authentication User Directory', style: AppTextStyles.h3()),
           const Spacer(),
-          StatusBadge(label: 'Firebase Auth Connected', color: AppColors.success),
+          const StatusBadge(label: 'Firebase Auth Connected', color: AppColors.success),
         ],
       ),
     );

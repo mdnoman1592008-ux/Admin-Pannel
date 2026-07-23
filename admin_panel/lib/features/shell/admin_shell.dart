@@ -32,7 +32,7 @@ class _AdminShellState extends State<AdminShell>
   late Animation<double> _pageFade;
   late Animation<Offset> _pageSlide;
 
-  static final _pages = const [
+  static const _pages = [
     DashboardScreen(),
     MoviesScreen(),
     SeriesScreen(),

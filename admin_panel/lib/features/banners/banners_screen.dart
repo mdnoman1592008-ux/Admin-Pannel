@@ -17,7 +17,7 @@ class _BannersScreenState extends State<BannersScreen> {
   int _selectedBanner = 0;
   _PreviewMode _previewMode = _PreviewMode.desktop;
 
-  final _banners = [
+  final _banners = const [
     _Banner('Interstellar — Explore Beyond', 'Sci-Fi Epic', '#050608', '#00D8FF', true),
     _Banner('The Dark Knight Returns', 'Action Thriller', '#0D0D0D', '#7B61FF', false),
     _Banner('Dune Part 2 — The Awakening', 'Epic Fantasy', '#0A0806', '#FFD86A', true),
