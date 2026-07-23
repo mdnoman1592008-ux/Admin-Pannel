@@ -1,12 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../auth/admin_auth_service.dart';
+import '../backend/backend_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import 'status_badge.dart';
 
 /// Premium Top Bar — Ether Cinema Admin Panel
-/// Search, notifications, system health, admin avatar, workspace switcher
+/// Layout: Title/Logo -> Spacer -> Live Search (🔍) -> System Health -> Live FCM Notification Drawer (🔔)
 class TopBar extends StatefulWidget {
   const TopBar({
     super.key,
@@ -24,132 +23,98 @@ class TopBar extends StatefulWidget {
 }
 
 class _TopBarState extends State<TopBar> {
-  bool _showNotifs = false;
-  int _notifCount = 3;
+  final _backend = LiveBackendService.instance;
 
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          height: 64,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            color: AppColors.glass,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.glassBorder),
-          ),
-          child: Row(
-            children: [
-              // Page title
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.pageTitle, style: AppTextStyles.h3()),
-                  Text(widget.pageSubtitle,
-                      style: AppTextStyles.bodySm().copyWith(fontSize: 11)),
-                ],
-              ),
-              const Spacer(),
-              // Search bar
-              _SearchBar(),
-              const SizedBox(width: 12),
-              // Extra actions
-              if (widget.actions != null) ...[
-                ...widget.actions!,
-                const SizedBox(width: 12),
-              ],
-              // System health dots
-              _SystemHealthIndicator(),
-              const SizedBox(width: 16),
-              // Notification bell
-              _NotificationButton(
-                count: _notifCount,
-                onTap: () => setState(() => _showNotifs = !_showNotifs),
-              ),
-              const SizedBox(width: 12),
-              // Admin avatar
-              _AdminAvatar(),
-            ],
-          ),
-        ),
-      ),
+  void _openLiveSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const _LiveSearchOverlayDialog(),
     );
   }
-}
 
-class _SearchBar extends StatefulWidget {
-  @override
-  State<_SearchBar> createState() => _SearchBarState();
-}
-
-class _SearchBarState extends State<_SearchBar> {
-  bool _focused = false;
+  void _openNotificationDrawer() {
+    showDialog(
+      context: context,
+      builder: (context) => const _LiveNotificationDrawerDialog(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: _focused ? 280 : 220,
-      height: 38,
-      decoration: BoxDecoration(
-        color: AppColors.glass,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _focused
-              ? AppColors.primary.withOpacity(0.5)
-              : AppColors.glassBorder,
-          width: _focused ? 1.5 : 1,
-        ),
-        boxShadow: _focused
-            ? [AppColors.glowCyan(blur: 12, opacity: 0.15)]
-            : null,
-      ),
-      child: TextField(
-        onTap: () => setState(() => _focused = true),
-        onTapOutside: (_) => setState(() => _focused = false),
-        style: AppTextStyles.body().copyWith(fontSize: 13),
-        decoration: InputDecoration(
-          hintText: _focused ? 'Search movies, users, categories...' : 'Search...',
-          hintStyle: AppTextStyles.body().copyWith(
-              fontSize: 13, color: AppColors.textMuted),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            size: 16,
-            color: _focused ? AppColors.primary : AppColors.textMuted,
-          ),
-          suffixIcon: _focused
-              ? Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassBorder,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text('⌘K',
-                        style: AppTextStyles.monoSm()
-                            .copyWith(color: AppColors.textMuted)),
+    return ListenableBuilder(
+      listenable: _backend,
+      builder: (context, _) {
+        final notifCount = _backend.notifications.length;
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              height: 64,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: AppColors.glass,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.glassBorder),
+              ),
+              child: Row(
+                children: [
+                  // Logo & Page title
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.play_circle_fill_rounded,
+                            color: Colors.black, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.pageTitle, style: AppTextStyles.h3()),
+                          Text(widget.pageSubtitle,
+                              style: AppTextStyles.bodySm().copyWith(fontSize: 11)),
+                        ],
+                      ),
+                    ],
                   ),
-                )
-              : null,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-          isDense: true,
-        ),
-      ),
+                  const Spacer(),
+                  // Live Search Button (🔍)
+                  IconButton(
+                    tooltip: 'Open Live Firestore Search (⌘K)',
+                    icon: const Icon(Icons.search_rounded,
+                        color: AppColors.primary, size: 22),
+                    onPressed: _openLiveSearchDialog,
+                  ),
+                  const SizedBox(width: 12),
+                  // System Health Indicator
+                  const _SystemHealthIndicator(),
+                  const SizedBox(width: 16),
+                  // Live Notification Bell (🔔)
+                  _NotificationButton(
+                    count: notifCount,
+                    onTap: _openNotificationDrawer,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 class _SystemHealthIndicator extends StatelessWidget {
+  const _SystemHealthIndicator();
+
   @override
   Widget build(BuildContext context) {
     return Tooltip(
@@ -205,9 +170,9 @@ class _NotificationButton extends StatelessWidget {
               border: Border.all(color: AppColors.glassBorder),
             ),
             child: const Icon(
-              Icons.notifications_outlined,
-              size: 18,
-              color: AppColors.textSecond,
+              Icons.notifications_rounded,
+              size: 20,
+              color: AppColors.primary,
             ),
           ),
           if (count > 0)
@@ -244,100 +209,218 @@ class _NotificationButton extends StatelessWidget {
   }
 }
 
-class _AdminAvatar extends StatefulWidget {
+/// Fullscreen Live Search Overlay Dialog
+class _LiveSearchOverlayDialog extends StatefulWidget {
+  const _LiveSearchOverlayDialog();
+
   @override
-  State<_AdminAvatar> createState() => _AdminAvatarState();
+  State<_LiveSearchOverlayDialog> createState() => _LiveSearchOverlayDialogState();
 }
 
-class _AdminAvatarState extends State<_AdminAvatar> {
-  bool _hovered = false;
+class _LiveSearchOverlayDialogState extends State<_LiveSearchOverlayDialog> {
+  final _backend = LiveBackendService.instance;
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
-    final user = AdminAuthService.instance.state.user;
-    final displayName = user?.displayName ?? 'Super Admin';
-    final roleName = user?.role.toValue() ?? 'super_admin';
+    final movies = _backend.movies
+        .where((m) => m.title.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
 
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        if (value == 'logout') {
-          AdminAuthService.instance.signOut();
-        }
-      },
-      color: AppColors.surfaceHigh,
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.glassBorder),
-      ),
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          enabled: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(displayName, style: AppTextStyles.h4().copyWith(fontSize: 13)),
-              Text(user?.email ?? 'admin@ethercinema.app', style: AppTextStyles.bodySm().copyWith(fontSize: 11)),
-              const SizedBox(height: 4),
-              StatusBadge(label: roleName, color: AppColors.primary),
-              const SizedBox(height: 8),
-              Container(height: 1, color: AppColors.glassBorder),
-            ],
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'logout',
-          child: Row(
-            children: [
-              const Icon(Icons.logout_rounded, color: AppColors.danger, size: 16),
-              const SizedBox(width: 8),
-              Text('Sign Out', style: AppTextStyles.body().copyWith(color: AppColors.danger, fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
-      ],
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: _hovered ? AppColors.glassHover : AppColors.glass,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.glassBorder),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(8),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 60, vertical: 40),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            width: 760,
+            height: 520,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHigh,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        autofocus: true,
+                        onChanged: (v) => setState(() => _query = v),
+                        style: AppTextStyles.h3(),
+                        decoration: InputDecoration(
+                          hintText: 'Live search movies, series & categories in Firestore...',
+                          hintStyle: AppTextStyles.body().copyWith(color: AppColors.textMuted),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.person_rounded,
-                    color: Colors.black, size: 16),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(displayName,
-                      style: AppTextStyles.h4().copyWith(fontSize: 11)),
-                  Text('Online',
-                      style: AppTextStyles.bodySm().copyWith(
-                          color: AppColors.success,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600)),
+                Container(height: 1, color: AppColors.glassBorder),
+                const SizedBox(height: 16),
+                if (_query.isEmpty) ...[
+                  Text('Trending Searches', style: AppTextStyles.labelLg()),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['Nebula Drift 4K', 'Sci-Fi Epic', 'The Dark Knight', 'Dune Part 2', 'Action Thriller']
+                        .map((term) => ActionChip(
+                              label: Text(term, style: AppTextStyles.bodySm()),
+                              backgroundColor: AppColors.surfaceCard,
+                              side: const BorderSide(color: AppColors.glassBorder),
+                              onPressed: () => setState(() => _query = term),
+                            ))
+                        .toList(),
+                  ),
+                ] else if (movies.isEmpty) ...[
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.search_off_rounded, color: AppColors.textMuted, size: 44),
+                          const SizedBox(height: 12),
+                          Text('No results found for "$_query"', style: AppTextStyles.h4()),
+                          const SizedBox(height: 4),
+                          Text('Try searching for titles or categories in Firestore', style: AppTextStyles.bodySm()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: movies.length,
+                      separatorBuilder: (_, __) => Container(height: 1, color: AppColors.glassBorder),
+                      itemBuilder: (_, i) {
+                        final movie = movies[i];
+                        return ListTile(
+                          leading: Container(
+                            width: 36,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(Icons.movie_rounded, color: Colors.black, size: 18),
+                          ),
+                          title: Text(movie.title, style: AppTextStyles.h4()),
+                          subtitle: Text('${movie.category} • ${movie.year}', style: AppTextStyles.bodySm()),
+                          trailing: const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textMuted, size: 14),
+                          onTap: () => Navigator.pop(context),
+                        );
+                      },
+                    ),
+                  ),
                 ],
-              ),
-              const SizedBox(width: 6),
-              const Icon(Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textMuted, size: 16),
-            ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Live FCM Notification Drawer Dialog
+class _LiveNotificationDrawerDialog extends StatelessWidget {
+  const _LiveNotificationDrawerDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final backend = LiveBackendService.instance;
+    final notifs = backend.notifications;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      alignment: Alignment.topRight,
+      insetPadding: const EdgeInsets.only(top: 80, right: 30),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: Container(
+            width: 380,
+            height: 460,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHigh,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.notifications_rounded, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 10),
+                    Text('Live FCM Notifications', style: AppTextStyles.h3()),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                Container(height: 1, color: AppColors.glassBorder),
+                const SizedBox(height: 12),
+                if (notifs.isEmpty) ...[
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.notifications_off_rounded, color: AppColors.textMuted, size: 40),
+                          const SizedBox(height: 12),
+                          Text('No Active Notifications', style: AppTextStyles.h4()),
+                          const SizedBox(height: 4),
+                          Text('Broadcast notifications from FCM Notification Center', style: AppTextStyles.bodySm(), textAlign: TextAlign.center),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: notifs.length,
+                      separatorBuilder: (_, __) => Container(height: 1, color: AppColors.glassBorder),
+                      itemBuilder: (_, i) {
+                        final n = notifs[i];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(n.title, style: AppTextStyles.h4().copyWith(fontSize: 13)),
+                              const SizedBox(height: 2),
+                              Text(n.body, style: AppTextStyles.bodySm()),
+                              const SizedBox(height: 4),
+                              Text('Sent to ${n.target} • ${n.sentAt.toIso8601String().substring(0, 10)}', style: AppTextStyles.monoSm().copyWith(fontSize: 10)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
