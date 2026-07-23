@@ -270,19 +270,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 14),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (v) => setState(() => _rememberMe = v ?? true),
-                            activeColor: AppColors.primary,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (v) => setState(() => _rememberMe = v ?? true),
+                                activeColor: AppColors.primary,
+                              ),
+                              Text('Remember me', style: AppTextStyles.bodySm()),
+                            ],
                           ),
-                          Text('Remember me', style: AppTextStyles.bodySm()),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              'Forgot Password?',
-                              style: AppTextStyles.bodySm().copyWith(color: AppColors.primary),
+                          Flexible(
+                            child: TextButton(
+                              onPressed: () {},
+                              child: Text(
+                                'Forgot Password?',
+                                style: AppTextStyles.bodySm().copyWith(color: AppColors.primary),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ],

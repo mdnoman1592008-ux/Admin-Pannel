@@ -122,13 +122,15 @@ class _GlowButtonState extends State<GlowButton>
                           ),
                           const SizedBox(width: 7),
                         ],
-                        Text(
-                          widget.label,
-                          style: AppTextStyles.body().copyWith(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.w600,
-                            color: widget.outlined ? _baseColor : _labelColor,
-                            letterSpacing: -0.2,
+                        Flexible(
+                          child: Text(
+                            widget.label,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.body().copyWith(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w600,
+                              color: widget.outlined ? _baseColor : _labelColor,
+                            ),
                           ),
                         ),
                       ],

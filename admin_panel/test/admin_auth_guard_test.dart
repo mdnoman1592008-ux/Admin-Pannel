@@ -12,6 +12,11 @@ void main() {
 
   final authService = AdminAuthService.instance;
 
+  void setDesktopView(WidgetTester tester) {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+  }
+
   group('Enterprise Admin Auth & RBAC Security Tests', () {
     test('Unauthenticated users are denied access and shown LoginScreen by default', () {
       authService.setAuthStateForTesting(AdminAuthState.unauthenticated());
@@ -90,6 +95,9 @@ void main() {
     });
 
     testWidgets('AuthGateway renders LoginScreen when unauthenticated', (WidgetTester tester) async {
+      setDesktopView(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+
       authService.setAuthStateForTesting(AdminAuthState.unauthenticated());
 
       await tester.pumpWidget(
@@ -98,7 +106,7 @@ void main() {
           home: const AuthGateway(),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(LoginScreen), findsOneWidget);
       expect(find.byType(AdminShell), findsNothing);
@@ -106,6 +114,9 @@ void main() {
     });
 
     testWidgets('AuthGateway renders AccessDeniedScreen when role is denied', (WidgetTester tester) async {
+      setDesktopView(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+
       final regularUser = AdminUser(
         uid: 'u_101',
         email: 'user@example.com',
@@ -124,7 +135,7 @@ void main() {
           home: const AuthGateway(),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(AccessDeniedScreen), findsOneWidget);
       expect(find.byType(LoginScreen), findsNothing);
@@ -133,6 +144,9 @@ void main() {
     });
 
     testWidgets('AuthGateway renders AdminShell when role is super_admin', (WidgetTester tester) async {
+      setDesktopView(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+
       final superAdmin = AdminUser(
         uid: 'u_303',
         email: 'admin@ethercinema.app',
@@ -150,7 +164,7 @@ void main() {
           home: const AuthGateway(),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.byType(AdminShell), findsOneWidget);
       expect(find.byType(LoginScreen), findsNothing);

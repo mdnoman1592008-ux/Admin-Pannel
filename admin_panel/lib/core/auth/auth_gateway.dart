@@ -23,7 +23,9 @@ class _AuthGatewayState extends State<AuthGateway> {
   @override
   void initState() {
     super.initState();
-    _authService.initialize();
+    if (_authService.state.status == AuthStatus.initial) {
+      _authService.initialize();
+    }
   }
 
   @override
