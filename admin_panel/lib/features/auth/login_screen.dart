@@ -1,13 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../core/auth/admin_auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/glow_button.dart';
-import '../../core/widgets/status_badge.dart';
 
-/// Premium Login Screen — Ether Cinema Admin Panel
-/// Hero section, glass card, animated logo, social auth buttons
+/// Enterprise Glassmorphism Admin Login Screen
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.onLoginSuccess});
 
@@ -19,10 +18,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController(text: 'admin@ethercinema.app');
-  final _passCtrl = TextEditingController(text: '••••••••••••');
+  final _passCtrl = TextEditingController(text: 'admin123456');
   bool _rememberMe = true;
   bool _isLoading = false;
   String _authMessage = '';
+  bool _isError = false;
 
   @override
   void dispose() {
@@ -31,18 +31,93 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin(String provider) async {
+  Future<void> _handleEmailLogin() async {
+    final email = _emailCtrl.text.trim();
+    final password = _passCtrl.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _isError = true;
+        _authMessage = 'Please enter both email and password.';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
-      _authMessage = 'Authenticating via $provider...';
+      _isError = false;
+      _authMessage = 'Authenticating with Firebase Auth...';
     });
-    await Future.delayed(const Duration(milliseconds: 1200));
+
+    final success = await AdminAuthService.instance.signInWithEmail(
+      email: email,
+      password: password,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (!success) {
+          _isError = true;
+          _authMessage = AdminAuthService.instance.state.errorMessage ??
+              'Authentication failed. Invalid credentials.';
+        } else {
+          _isError = false;
+          _authMessage = 'Authorized! Loading Dashboard...';
+          widget.onLoginSuccess?.call();
+        }
+      });
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
     setState(() {
-      _isLoading = false;
-      _authMessage = 'Authentication Successful! Redirecting...';
+      _isLoading = true;
+      _isError = false;
+      _authMessage = 'Connecting to Google OAuth...';
     });
-    await Future.delayed(const Duration(milliseconds: 600));
-    widget.onLoginSuccess?.call();
+
+    final success = await AdminAuthService.instance.signInWithGoogle();
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (!success) {
+          _isError = true;
+          _authMessage = AdminAuthService.instance.state.errorMessage ??
+              'Google Sign-In failed.';
+        } else {
+          _isError = false;
+          _authMessage = 'Authorized! Loading Dashboard...';
+          widget.onLoginSuccess?.call();
+        }
+      });
+    }
+  }
+
+  Future<void> _handleFacebookLogin() async {
+    setState(() {
+      _isLoading = true;
+      _isError = false;
+      _authMessage = 'Connecting to Facebook Auth...';
+    });
+
+    final success = await AdminAuthService.instance.signInWithFacebook();
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (!success) {
+          _isError = true;
+          _authMessage = AdminAuthService.instance.state.errorMessage ??
+              'Facebook Sign-In failed.';
+        } else {
+          _isError = false;
+          _authMessage = 'Authorized! Loading Dashboard...';
+          widget.onLoginSuccess?.call();
+        }
+      });
+    }
   }
 
   @override
@@ -55,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Stack(
           children: [
-            // Background ambient glow circles
+            // Background ambient light orbs
             Positioned(
               top: -100,
               left: -100,
@@ -82,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            // Main content center
+            // Center glass card
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -95,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Animated logo
+                      // Large Animated Logo
                       Container(
                         width: 56,
                         height: 56,
@@ -114,11 +189,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text('Ether Cinema', style: AppTextStyles.h1()),
                       const SizedBox(height: 6),
                       Text(
-                        'Enterprise Admin Portal',
+                        'Enterprise Web Admin Portal',
                         style: AppTextStyles.bodySm().copyWith(fontSize: 13),
                       ),
                       const SizedBox(height: 28),
-                      // Social Auth Buttons
+                      // Social login buttons
                       Row(
                         children: [
                           Expanded(
@@ -129,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               textColor: Colors.white,
                               outlined: true,
                               isSmall: true,
-                              onPressed: () => _handleLogin('Facebook'),
+                              onPressed: _isLoading ? null : _handleFacebookLogin,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -141,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               textColor: Colors.white,
                               outlined: true,
                               isSmall: true,
-                              onPressed: () => _handleLogin('Google'),
+                              onPressed: _isLoading ? null : _handleGoogleLogin,
                             ),
                           ),
                         ],
@@ -161,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      // Form fields
+                      // Email field
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text('Email Address', style: AppTextStyles.labelLg()),
@@ -169,12 +244,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 6),
                       TextField(
                         controller: _emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
                         style: AppTextStyles.body().copyWith(fontSize: 14),
                         decoration: const InputDecoration(
+                          hintText: 'admin@ethercinema.app',
                           prefixIcon: Icon(Icons.email_outlined, size: 18, color: AppColors.textMuted),
                         ),
                       ),
                       const SizedBox(height: 16),
+                      // Password field
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text('Password', style: AppTextStyles.labelLg()),
@@ -185,8 +263,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: true,
                         style: AppTextStyles.body().copyWith(fontSize: 14),
                         decoration: const InputDecoration(
+                          hintText: '••••••••••••',
                           prefixIcon: Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.textMuted),
                         ),
+                        onSubmitted: (_) => _handleEmailLogin(),
                       ),
                       const SizedBox(height: 14),
                       Row(
@@ -207,18 +287,39 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       if (_authMessage.isNotEmpty) ...[
-                        Text(
-                          _authMessage,
-                          style: AppTextStyles.bodySm().copyWith(
-                            color: _authMessage.contains('Successful')
-                                ? AppColors.success
-                                : AppColors.primary,
-                            fontWeight: FontWeight.w600,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: (_isError ? AppColors.danger : AppColors.success).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: (_isError ? AppColors.danger : AppColors.success).withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+                                color: _isError ? AppColors.danger : AppColors.success,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _authMessage,
+                                  style: AppTextStyles.bodySm().copyWith(
+                                    color: _isError ? AppColors.danger : AppColors.success,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                       ],
                       GlowButton(
                         label: 'Sign In to Dashboard',
@@ -227,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         fullWidth: true,
                         isLoading: _isLoading,
                         gradient: AppColors.primaryGradient,
-                        onPressed: () => _handleLogin('Email'),
+                        onPressed: _handleEmailLogin,
                       ),
                     ],
                   ),

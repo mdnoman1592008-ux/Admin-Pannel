@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../auth/admin_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import 'status_badge.dart';
@@ -253,48 +254,91 @@ class _AdminAvatarState extends State<_AdminAvatar> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: _hovered ? AppColors.glassHover : AppColors.glass,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.glassBorder),
+    final user = AdminAuthService.instance.state.user;
+    final displayName = user?.displayName ?? 'Super Admin';
+    final roleName = user?.role.toValue() ?? 'super_admin';
+
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'logout') {
+          AdminAuthService.instance.signOut();
+        }
+      },
+      color: AppColors.surfaceHigh,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.glassBorder),
+      ),
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(displayName, style: AppTextStyles.h4().copyWith(fontSize: 13)),
+              Text(user?.email ?? 'admin@ethercinema.app', style: AppTextStyles.bodySm().copyWith(fontSize: 11)),
+              const SizedBox(height: 4),
+              StatusBadge(label: roleName, color: AppColors.primary),
+              const SizedBox(height: 8),
+              Container(height: 1, color: AppColors.glassBorder),
+            ],
+          ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(8),
+        PopupMenuItem<String>(
+          value: 'logout',
+          child: Row(
+            children: [
+              const Icon(Icons.logout_rounded, color: AppColors.danger, size: 16),
+              const SizedBox(width: 8),
+              Text('Sign Out', style: AppTextStyles.body().copyWith(color: AppColors.danger, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ],
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: _hovered ? AppColors.glassHover : AppColors.glass,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.glassBorder),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.person_rounded,
+                    color: Colors.black, size: 16),
               ),
-              child: const Icon(Icons.person_rounded,
-                  color: Colors.black, size: 16),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Super Admin',
-                    style: AppTextStyles.h4().copyWith(fontSize: 11)),
-                Text('Online',
-                    style: AppTextStyles.bodySm().copyWith(
-                        color: AppColors.success,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600)),
-              ],
-            ),
-            const SizedBox(width: 6),
-            const Icon(Icons.keyboard_arrow_down_rounded,
-                color: AppColors.textMuted, size: 16),
-          ],
+              const SizedBox(width: 8),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(displayName,
+                      style: AppTextStyles.h4().copyWith(fontSize: 11)),
+                  Text('Online',
+                      style: AppTextStyles.bodySm().copyWith(
+                          color: AppColors.success,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.textMuted, size: 16),
+            ],
+          ),
         ),
       ),
     );

@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'core/auth/auth_gateway.dart';
 import 'core/supabase_initializer.dart';
 import 'core/theme/app_theme.dart';
-import 'features/shell/admin_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,10 +16,10 @@ class EtherAdminApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Ether Cinema — Admin Portal',
+      title: 'Ether Cinema — Enterprise Admin Portal',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      home: const AdminShell(),
+      home: const AuthGateway(),
       builder: (context, child) {
         return ScrollConfiguration(
           behavior: _SmoothScrollBehavior(),
@@ -34,8 +34,8 @@ class EtherAdminApp extends StatelessWidget {
 class _SmoothScrollBehavior extends ScrollBehavior {
   @override
   Set<PointerDeviceKind> get dragDevices => {
-    PointerDeviceKind.touch,
-    PointerDeviceKind.mouse,
-    PointerDeviceKind.stylus,
-  };
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+      };
 }
