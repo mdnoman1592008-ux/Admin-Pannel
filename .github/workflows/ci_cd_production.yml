@@ -1,0 +1,71 @@
+name: Ether Cinema Admin Console — Production CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, release/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  analyze_and_test:
+    name: Code Analysis & Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies (Admin Panel)
+        run: |
+          cd admin_panel
+          flutter pub get
+
+      - name: Static Analysis
+        run: |
+          cd admin_panel
+          flutter analyze
+
+      - name: Code Formatting Check
+        run: |
+          cd admin_panel
+          dart format --set-exit-if-changed lib test
+
+      - name: Execute Full Test Suite
+        run: |
+          cd admin_panel
+          flutter test --coverage
+
+  build_web_release:
+    name: Build Flutter Web Production Bundle
+    needs: analyze_and_test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Build Web Bundle
+        run: |
+          cd admin_panel
+          flutter pub get
+          flutter build web --release --pwa-strategy=none
+
+      - name: Upload Web Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ether-cinema-admin-web-build
+          path: admin_panel/build/web
