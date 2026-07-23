@@ -8,7 +8,7 @@ import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/kpi_card.dart';
 
 /// Live Enterprise Dashboard Screen
-/// 100% connected to live backend (Firestore, Firebase Auth, Supabase Storage)
+/// Displays startup diagnostics, missing collections/indexes, and live streams
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -60,6 +60,10 @@ class _DashboardScreenState extends State<DashboardScreen>
               children: [
                 _buildHeroGreeting(report),
                 const SizedBox(height: 24),
+                if (report.hasMissingDependencies) ...[
+                  _buildMissingResourcesAlertCard(report),
+                  const SizedBox(height: 24),
+                ],
                 _buildKpiGrid(movies.length, series.length),
                 const SizedBox(height: 24),
                 _buildLiveTelemetry(movies, logs),
@@ -70,6 +74,72 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMissingResourcesAlertCard(BackendHealthReport report) {
+    return GlassCard(
+      glowColor: AppColors.warning,
+      glowBlur: 32,
+      borderColor: AppColors.warning.withOpacity(0.3),
+      backgroundColor: AppColors.warning.withOpacity(0.06),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.warning_amber_rounded,
+                    color: AppColors.warning, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text('Startup Diagnostic — Backend Action Required',
+                  style: AppTextStyles.h3().copyWith(color: AppColors.warning)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...report.missingItems.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceCard,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.glassBorder),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.construction_rounded,
+                        color: AppColors.warning, size: 16),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item.name,
+                              style: AppTextStyles.h4().copyWith(fontSize: 13)),
+                          if (item.fixActionHint != null)
+                            Text(
+                              'Action: ${item.fixActionHint}',
+                              style: AppTextStyles.monoSm()
+                                  .copyWith(color: AppColors.warning, fontSize: 11),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 
