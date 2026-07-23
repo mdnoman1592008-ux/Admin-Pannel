@@ -7,6 +7,7 @@ import '../../core/widgets/glow_button.dart';
 import '../../core/widgets/status_badge.dart';
 
 import '../content_wizard/content_wizard_dialog.dart';
+import '../analytics/movie_analytics_dialog.dart';
 
 /// Live Movies DataGrid Screen
 /// Connected to live Firestore collection 'movies'
@@ -138,6 +139,7 @@ class _MoviesScreenState extends State<MoviesScreen> {
           Expanded(flex: 1, child: Text('STATUS', style: AppTextStyles.tableHeader())),
           Expanded(flex: 1, child: Text('VIEWS', style: AppTextStyles.tableHeader())),
           Expanded(flex: 1, child: Text('PUBLISHED', style: AppTextStyles.tableHeader())),
+          SizedBox(width: 90, child: Text('ANALYTICS', style: AppTextStyles.tableHeader())),
         ],
       ),
     );
@@ -187,6 +189,18 @@ class _MoviesScreenState extends State<MoviesScreen> {
               value: movie.isPublished,
               onChanged: (_) {},
               activeColor: AppColors.primary,
+            ),
+          ),
+          SizedBox(
+            width: 90,
+            child: IconButton(
+              icon: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 18),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => MovieAnalyticsDialog(movie: movie),
+                );
+              },
             ),
           ),
         ],
