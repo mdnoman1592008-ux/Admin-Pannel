@@ -1,0 +1,33 @@
+# Firebase Data Connect GraphQL Schema for Ether Cinema OTT Platform
+
+type Movie @table(name: "movies") {
+  id: UUID! @default(expr: "uuidV4()")
+  title: String!
+  description: String!
+  posterUrl: String!
+  backdropUrl: String!
+  rating: Float!
+  videoId: String!
+  releaseYear: Int!
+  is4k: Boolean!
+  genre: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type UserProfile @table(name: "user_profiles") {
+  id: UUID! @default(expr: "uuidV4()")
+  uid: String!
+  email: String!
+  displayName: String!
+  role: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type WatchHistory @table(name: "watch_histories") {
+  id: UUID! @default(expr: "uuidV4()")
+  userId: String!
+  movieId: String!
+  positionMs: Int!
+  durationMs: Int!
+  updatedAt: Timestamp! @default(expr: "request.time")
+}

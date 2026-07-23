@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "20125701812",
+    "project_id": "ether-cinema",
+    "storage_bucket": "ether-cinema.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20125701812:android:0e2ff73048a8e608b069e1",
+        "android_client_info": {
+          "package_name": "com.example.ether_cinema"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "20125701812-5b1u78m0je7iqdu9s6ivf5j60nihbqpg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ether_cinema",
+            "certificate_hash": "13bcf5188e8a7b70192dfeba82d06a11e2f83897"
+          }
+        },
+        {
+          "client_id": "20125701812-74ue5gp2bdh7ajcqcjb3660hvldmn8df.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeAOeVE_ZLi68dB2gDB4ACnZ0ZqeHjCz8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "20125701812-74ue5gp2bdh7ajcqcjb3660hvldmn8df.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

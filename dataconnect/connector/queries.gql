@@ -1,0 +1,31 @@
+# Queries for Ether Cinema Data Connect
+
+query GetTrendingMovies @auth(level: PUBLIC) {
+  movies(orderBy: [{ rating: DESC }]) {
+    id
+    title
+    description
+    posterUrl
+    backdropUrl
+    rating
+    videoId
+    releaseYear
+    is4k
+    genre
+  }
+}
+
+query GetMovieById($id: UUID!) @auth(level: PUBLIC) {
+  movie(id: $id) {
+    id
+    title
+    description
+    posterUrl
+    backdropUrl
+    rating
+    videoId
+    releaseYear
+    is4k
+    genre
+  }
+}

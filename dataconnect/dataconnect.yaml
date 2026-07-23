@@ -1,0 +1,12 @@
+specVersion: "v1alpha"
+serviceId: "ether-cinema-service"
+location: "us-east4"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "ether_cinema_db"
+      cloudSql:
+        instanceId: "ether-cinema-sql"
+connectorDirs:
+  - "./connector"
