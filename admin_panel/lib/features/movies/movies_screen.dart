@@ -6,6 +6,8 @@ import '../../core/widgets/glass_card.dart';
 import '../../core/widgets/glow_button.dart';
 import '../../core/widgets/status_badge.dart';
 
+import '../content_wizard/content_wizard_dialog.dart';
+
 /// Live Movies DataGrid Screen
 /// Connected to live Firestore collection 'movies'
 class MoviesScreen extends StatefulWidget {
@@ -66,8 +68,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
           ),
           const Spacer(),
           GlowButton(
-            label: 'Add Movie to Firestore',
-            icon: Icons.add_rounded,
+            label: 'Launch 7-Step Content Wizard',
+            icon: Icons.auto_awesome_rounded,
             color: AppColors.primary,
             isSmall: true,
             onPressed: _showAddMovieDialog,
@@ -90,12 +92,12 @@ class _MoviesScreenState extends State<MoviesScreen> {
               Text('No data available in Firestore collection "movies"',
                   style: AppTextStyles.h3()),
               const SizedBox(height: 8),
-              Text('Click "Add Movie to Firestore" to populate live records.',
+              Text('Launch the 7-step wizard to populate live records.',
                   style: AppTextStyles.bodySm()),
               const SizedBox(height: 20),
               GlowButton(
-                label: 'Add First Movie',
-                icon: Icons.add_rounded,
+                label: 'Launch 7-Step Content Wizard',
+                icon: Icons.auto_awesome_rounded,
                 color: AppColors.primary,
                 isSmall: true,
                 onPressed: _showAddMovieDialog,
@@ -193,59 +195,9 @@ class _MoviesScreenState extends State<MoviesScreen> {
   }
 
   void _showAddMovieDialog() {
-    final titleCtrl = TextEditingController();
-    final catCtrl = TextEditingController(text: 'Sci-Fi');
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surfaceHigh,
-        title: Text('Add Live Movie to Firestore', style: AppTextStyles.h3()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              decoration: const InputDecoration(hintText: 'Movie Title'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: catCtrl,
-              decoration: const InputDecoration(hintText: 'Category'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          GlowButton(
-            label: 'Save Movie',
-            icon: Icons.check_rounded,
-            color: AppColors.primary,
-            isSmall: true,
-            onPressed: () {
-              if (titleCtrl.text.isNotEmpty) {
-                _backend.addMovie(LiveMovie(
-                  id: 'm_${DateTime.now().millisecondsSinceEpoch}',
-                  title: titleCtrl.text.trim(),
-                  category: catCtrl.text.trim(),
-                  posterUrl: '',
-                  bannerUrl: '',
-                  views: 0,
-                  isPublished: true,
-                  isFeatured: false,
-                  year: '2024',
-                  createdAt: DateTime.now(),
-                  updatedAt: DateTime.now(),
-                ));
-              }
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+      builder: (context) => const ContentWizardDialog(),
     );
   }
 }
