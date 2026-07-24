@@ -209,8 +209,9 @@ class AdminAuthService extends ChangeNotifier {
     try {
       final credential = await _auth.signInWithEmailAndPassword(
           email: email.trim(), password: password);
-      if (credential.user == null)
-        throw const FirebaseAuthException(code: 'user-not-found');
+      if (credential.user == null) {
+        throw FirebaseAuthException(code: 'user-not-found');
+      }
       return _authorize(credential.user!);
     } on FirebaseAuthException catch (error) {
       _state =
