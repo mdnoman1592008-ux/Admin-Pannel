@@ -41,12 +41,12 @@ class _GlassContainerState extends State<GlassContainer> {
           padding: widget.padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: _isHoveredOrPressed
-                ? Colors.white.withOpacity(0.09)
+                ? Colors.white.withValues(alpha: 0.09)
                 : widget.fillColor,
             borderRadius: BorderRadius.circular(widget.borderRadius),
             border: Border.all(
               color: _isHoveredOrPressed
-                  ? AppColors.primaryContainer.withOpacity(0.5)
+                  ? AppColors.primaryContainer.withValues(alpha: 0.5)
                   : widget.borderColor,
               width: 1.0,
             ),

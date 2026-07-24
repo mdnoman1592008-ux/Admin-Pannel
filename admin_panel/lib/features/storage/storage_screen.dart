@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../core/admin_storage_service.dart';
 import '../../core/backend/backend_service.dart';
 import '../../core/supabase_initializer.dart';
@@ -23,45 +24,60 @@ class _StorageScreenState extends State<StorageScreen> {
   String _lastUrl = '';
 
   Future<void> _handleUpload(String type) async {
+    final selection = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (selection == null || selection.files.single.bytes == null) return;
+
     setState(() {
       _uploading = true;
-      _uploadStatus = 'Uploading $type to Supabase bucket "${SupabaseInitializer.defaultBucket}"...';
+      _uploadStatus =
+          'Uploading $type to Supabase bucket "${SupabaseInitializer.defaultBucket}"...';
       _lastUrl = '';
     });
 
-    final bytes = List.generate(128, (i) => i % 256);
+    final file = selection.files.single;
+    final bytes = file.bytes!;
+    final extension =
+        (file.extension?.isNotEmpty ?? false) ? file.extension! : 'jpg';
     String url = '';
+    try {
+      if (type == 'Poster') {
+        url = await _storage.uploadMoviePoster(
+          bytes: bytes,
+          movieId: 'm_${DateTime.now().millisecondsSinceEpoch}',
+          extension: extension,
+        );
+      } else if (type == 'Banner') {
+        url = await _storage.uploadMovieBanner(
+          bytes: bytes,
+          movieId: 'm_${DateTime.now().millisecondsSinceEpoch}',
+          extension: extension,
+        );
+      }
 
-    if (type == 'Poster') {
-      url = await _storage.uploadMoviePoster(
-        bytes: bytes,
-        movieId: 'm_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    } else if (type == 'Banner') {
-      url = await _storage.uploadMovieBanner(
-        bytes: bytes,
-        movieId: 'm_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    } else if (type == 'Avatar') {
-      url = await _storage.uploadAvatar(
-        bytes: bytes,
-        userId: 'u_${DateTime.now().millisecondsSinceEpoch}',
-      );
+      _backend.recordStorageUpload(LiveStorageFile(
+        name: file.name,
+        path: url,
+        sizeBytes: bytes.length,
+        folder: type.toLowerCase(),
+        uploadedAt: DateTime.now(),
+      ));
+
+      if (!mounted) return;
+      setState(() {
+        _uploading = false;
+        _uploadStatus = 'Upload successful!';
+        _lastUrl = url;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _uploading = false;
+        _uploadStatus = 'Upload failed: $error';
+      });
     }
-
-    _backend.recordStorageUpload(LiveStorageFile(
-      name: '${type.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      path: url,
-      sizeBytes: bytes.length,
-      folder: type.toLowerCase(),
-      uploadedAt: DateTime.now(),
-    ));
-
-    setState(() {
-      _uploading = false;
-      _uploadStatus = 'Upload successful!';
-      _lastUrl = url;
-    });
   }
 
   @override
@@ -95,9 +111,12 @@ class _StorageScreenState extends State<StorageScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          const Icon(Icons.cloud_done_rounded, color: AppColors.primary, size: 20),
+          const Icon(Icons.cloud_done_rounded,
+              color: AppColors.primary, size: 20),
           const SizedBox(width: 10),
-          Text('Supabase Storage Bucket: "${SupabaseInitializer.defaultBucket}"', style: AppTextStyles.h3()),
+          Text(
+              'Supabase Storage Bucket: "${SupabaseInitializer.defaultBucket}"',
+              style: AppTextStyles.h3()),
           const Spacer(),
           GlowButton(
             label: 'Upload Poster',
@@ -132,12 +151,15 @@ class _StorageScreenState extends State<StorageScreen> {
                 const SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: AppColors.primary),
                 )
               else
-                const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 16),
+                const Icon(Icons.check_circle_rounded,
+                    color: AppColors.success, size: 16),
               const SizedBox(width: 10),
-              Text(_uploadStatus, style: AppTextStyles.h4().copyWith(fontSize: 13)),
+              Text(_uploadStatus,
+                  style: AppTextStyles.h4().copyWith(fontSize: 13)),
             ],
           ),
           if (_lastUrl.isNotEmpty) ...[
@@ -156,12 +178,15 @@ class _StorageScreenState extends State<StorageScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off_rounded, color: AppColors.textMuted, size: 48),
+              const Icon(Icons.cloud_off_rounded,
+                  color: AppColors.textMuted, size: 48),
               const SizedBox(height: 16),
-              Text('No media objects uploaded to Supabase Storage bucket "${SupabaseInitializer.defaultBucket}"',
+              Text(
+                  'No media objects uploaded to Supabase Storage bucket "${SupabaseInitializer.defaultBucket}"',
                   style: AppTextStyles.h3()),
               const SizedBox(height: 8),
-              Text('Use the upload buttons above to upload live media assets to Supabase CDN.',
+              Text(
+                  'Use the upload buttons above to upload live media assets to Supabase CDN.',
                   style: AppTextStyles.bodySm()),
             ],
           ),
@@ -179,25 +204,29 @@ class _StorageScreenState extends State<StorageScreen> {
           Expanded(
             child: ListView.separated(
               itemCount: files.length,
-              separatorBuilder: (_, __) => Container(height: 1, color: AppColors.glassBorder),
+              separatorBuilder: (_, __) =>
+                  Container(height: 1, color: AppColors.glassBorder),
               itemBuilder: (_, i) {
                 final file = files[i];
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(
                     children: [
-                      const Icon(Icons.image_rounded, color: AppColors.primary, size: 20),
+                      const Icon(Icons.image_rounded,
+                          color: AppColors.primary, size: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(file.name, style: AppTextStyles.h4()),
-                            SelectableText(file.path, style: AppTextStyles.monoSm()),
+                            SelectableText(file.path,
+                                style: AppTextStyles.monoSm()),
                           ],
                         ),
                       ),
-                      Text('${file.sizeBytes} bytes', style: AppTextStyles.bodySm()),
+                      Text('${file.sizeBytes} bytes',
+                          style: AppTextStyles.bodySm()),
                     ],
                   ),
                 );

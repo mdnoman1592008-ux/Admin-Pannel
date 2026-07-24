@@ -17,8 +17,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailCtrl = TextEditingController(text: 'admin@ethercinema.app');
-  final _passCtrl = TextEditingController(text: 'admin123456');
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
   bool _rememberMe = true;
   bool _isLoading = false;
   String _authMessage = '';
@@ -177,7 +177,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(
                           gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [AppColors.glowCyan(blur: 24, opacity: 0.6)],
+                          boxShadow: [
+                            AppColors.glowCyan(blur: 24, opacity: 0.6)
+                          ],
                         ),
                         child: const Icon(
                           Icons.play_circle_fill_rounded,
@@ -204,7 +206,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               textColor: Colors.white,
                               outlined: true,
                               isSmall: true,
-                              onPressed: _isLoading ? null : _handleFacebookLogin,
+                              onPressed:
+                                  _isLoading ? null : _handleFacebookLogin,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -224,7 +227,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 20),
                       Row(
                         children: [
-                          Expanded(child: Container(height: 1, color: AppColors.glassBorder)),
+                          Expanded(
+                              child: Container(
+                                  height: 1, color: AppColors.glassBorder)),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
@@ -232,14 +237,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: AppTextStyles.labelCaps(),
                             ),
                           ),
-                          Expanded(child: Container(height: 1, color: AppColors.glassBorder)),
+                          Expanded(
+                              child: Container(
+                                  height: 1, color: AppColors.glassBorder)),
                         ],
                       ),
                       const SizedBox(height: 20),
                       // Email field
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: Text('Email Address', style: AppTextStyles.labelLg()),
+                        child: Text('Email Address',
+                            style: AppTextStyles.labelLg()),
                       ),
                       const SizedBox(height: 6),
                       TextField(
@@ -247,8 +255,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         style: AppTextStyles.body().copyWith(fontSize: 14),
                         decoration: const InputDecoration(
-                          hintText: 'admin@ethercinema.app',
-                          prefixIcon: Icon(Icons.email_outlined, size: 18, color: AppColors.textMuted),
+                          hintText: 'Admin email address',
+                          prefixIcon: Icon(Icons.email_outlined,
+                              size: 18, color: AppColors.textMuted),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -264,7 +273,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: AppTextStyles.body().copyWith(fontSize: 14),
                         decoration: const InputDecoration(
                           hintText: '••••••••••••',
-                          prefixIcon: Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.textMuted),
+                          prefixIcon: Icon(Icons.lock_outline_rounded,
+                              size: 18, color: AppColors.textMuted),
                         ),
                         onSubmitted: (_) => _handleEmailLogin(),
                       ),
@@ -277,10 +287,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               Checkbox(
                                 value: _rememberMe,
-                                onChanged: (v) => setState(() => _rememberMe = v ?? true),
+                                onChanged: (v) =>
+                                    setState(() => _rememberMe = v ?? true),
                                 activeColor: AppColors.primary,
                               ),
-                              Text('Remember me', style: AppTextStyles.bodySm()),
+                              Text('Remember me',
+                                  style: AppTextStyles.bodySm()),
                             ],
                           ),
                           Flexible(
@@ -288,7 +300,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: () {},
                               child: Text(
                                 'Forgot Password?',
-                                style: AppTextStyles.bodySm().copyWith(color: AppColors.primary),
+                                style: AppTextStyles.bodySm()
+                                    .copyWith(color: AppColors.primary),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -298,19 +311,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
                       if (_authMessage.isNotEmpty) ...[
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: (_isError ? AppColors.danger : AppColors.success).withOpacity(0.12),
+                            color: (_isError
+                                    ? AppColors.danger
+                                    : AppColors.success)
+                                .withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: (_isError ? AppColors.danger : AppColors.success).withOpacity(0.3),
+                              color: (_isError
+                                      ? AppColors.danger
+                                      : AppColors.success)
+                                  .withOpacity(0.3),
                             ),
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                _isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
-                                color: _isError ? AppColors.danger : AppColors.success,
+                                _isError
+                                    ? Icons.error_outline_rounded
+                                    : Icons.check_circle_outline_rounded,
+                                color: _isError
+                                    ? AppColors.danger
+                                    : AppColors.success,
                                 size: 16,
                               ),
                               const SizedBox(width: 8),
@@ -318,7 +342,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Text(
                                   _authMessage,
                                   style: AppTextStyles.bodySm().copyWith(
-                                    color: _isError ? AppColors.danger : AppColors.success,
+                                    color: _isError
+                                        ? AppColors.danger
+                                        : AppColors.success,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 12,
                                   ),

@@ -63,7 +63,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
                 prefixIcon: const Icon(Icons.search_rounded,
                     size: 16, color: AppColors.textMuted),
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
               ),
             ),
           ),
@@ -118,8 +119,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
           Expanded(
             child: ListView.separated(
               itemCount: movies.length,
-              separatorBuilder: (_, __) =>
-                  Container(height: 1, color: AppColors.glassBorder.withOpacity(0.5)),
+              separatorBuilder: (_, __) => Container(
+                  height: 1, color: AppColors.glassBorder.withOpacity(0.5)),
               itemBuilder: (_, i) => _buildMovieRow(movies[i]),
             ),
           ),
@@ -134,12 +135,24 @@ class _MoviesScreenState extends State<MoviesScreen> {
       child: Row(
         children: [
           const SizedBox(width: 52),
-          Expanded(flex: 3, child: Text('TITLE', style: AppTextStyles.tableHeader())),
-          Expanded(flex: 2, child: Text('CATEGORY', style: AppTextStyles.tableHeader())),
-          Expanded(flex: 1, child: Text('STATUS', style: AppTextStyles.tableHeader())),
-          Expanded(flex: 1, child: Text('VIEWS', style: AppTextStyles.tableHeader())),
-          Expanded(flex: 1, child: Text('PUBLISHED', style: AppTextStyles.tableHeader())),
-          SizedBox(width: 90, child: Text('ANALYTICS', style: AppTextStyles.tableHeader())),
+          Expanded(
+              flex: 3,
+              child: Text('TITLE', style: AppTextStyles.tableHeader())),
+          Expanded(
+              flex: 2,
+              child: Text('CATEGORY', style: AppTextStyles.tableHeader())),
+          Expanded(
+              flex: 1,
+              child: Text('STATUS', style: AppTextStyles.tableHeader())),
+          Expanded(
+              flex: 1,
+              child: Text('VIEWS', style: AppTextStyles.tableHeader())),
+          Expanded(
+              flex: 1,
+              child: Text('PUBLISHED', style: AppTextStyles.tableHeader())),
+          SizedBox(
+              width: 90,
+              child: Text('ANALYTICS', style: AppTextStyles.tableHeader())),
         ],
       ),
     );
@@ -157,7 +170,8 @@ class _MoviesScreenState extends State<MoviesScreen> {
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Icon(Icons.movie_rounded, color: Colors.black, size: 18),
+            child:
+                const Icon(Icons.movie_rounded, color: Colors.black, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -166,18 +180,22 @@ class _MoviesScreenState extends State<MoviesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(movie.title,
-                    style: AppTextStyles.tableCell().copyWith(fontWeight: FontWeight.w600)),
+                    style: AppTextStyles.tableCell()
+                        .copyWith(fontWeight: FontWeight.w600)),
                 Text(movie.year, style: AppTextStyles.bodySm()),
               ],
             ),
           ),
           Expanded(
             flex: 2,
-            child: StatusBadge(label: movie.category, color: AppColors.secondary),
+            child:
+                StatusBadge(label: movie.category, color: AppColors.secondary),
           ),
           Expanded(
             flex: 1,
-            child: movie.isPublished ? StatusBadge.published() : StatusBadge.draft(),
+            child: movie.isPublished
+                ? StatusBadge.published()
+                : StatusBadge.draft(),
           ),
           Expanded(
             flex: 1,
@@ -187,20 +205,30 @@ class _MoviesScreenState extends State<MoviesScreen> {
             flex: 1,
             child: Switch(
               value: movie.isPublished,
-              onChanged: (_) {},
+              onChanged: (value) =>
+                  _backend.updateMovie(movie.copyWith(isPublished: value)),
               activeColor: AppColors.primary,
             ),
           ),
           SizedBox(
             width: 90,
-            child: IconButton(
-              icon: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 18),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => MovieAnalyticsDialog(movie: movie),
-                );
-              },
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.analytics_rounded,
+                      color: AppColors.primary, size: 18),
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (context) => MovieAnalyticsDialog(movie: movie),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Delete movie',
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      color: AppColors.danger, size: 18),
+                  onPressed: () => _confirmDelete(movie),
+                ),
+              ],
             ),
           ),
         ],
@@ -213,5 +241,25 @@ class _MoviesScreenState extends State<MoviesScreen> {
       context: context,
       builder: (context) => const ContentWizardDialog(),
     );
+  }
+
+  Future<void> _confirmDelete(LiveMovie movie) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete movie?'),
+        content:
+            Text('"${movie.title}" will be removed from the live catalog.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed == true) await _backend.deleteMovie(movie.id);
   }
 }

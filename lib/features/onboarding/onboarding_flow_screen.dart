@@ -121,7 +121,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             const SizedBox(height: 24),
             const Text(
               'Ether Cinema VisionOS',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.extrabold, color: Colors.white, tracking: 1.2),
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 1.2),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),

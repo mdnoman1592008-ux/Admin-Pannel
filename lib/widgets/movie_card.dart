@@ -68,12 +68,12 @@ class MovieCard extends StatelessWidget {
                               margin: const EdgeInsets.only(bottom: 4),
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 borderRadius: BorderRadius.circular(4),
                                 border: Border.all(
                                   color: isVip
-                                      ? AppColors.tertiary.withOpacity(0.5)
-                                      : AppColors.primaryContainer.withOpacity(0.5),
+                                      ? AppColors.tertiary.withValues(alpha: 0.5)
+                                      : AppColors.primaryContainer.withValues(alpha: 0.5),
                                 ),
                               ),
                               child: Text(
@@ -127,7 +127,7 @@ class MovieCard extends StatelessWidget {
                 '${movie.genres.first} • ${movie.releaseYear}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.onSurfaceVariant.withOpacity(0.7),
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
               ),
           ],

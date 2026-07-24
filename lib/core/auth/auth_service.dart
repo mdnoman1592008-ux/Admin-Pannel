@@ -10,7 +10,18 @@ class AuthService {
   UserDocument? get currentUser => _authRepository.currentUser;
   bool get isLoggedIn => currentUser != null;
 
-  Future<UserDocument> signInWithEmailPassword(String email, String password) async {
+  Future<UserDocument> registerWithEmailPassword(
+      String name, String email, String password) async {
+    try {
+      return await _authRepository.registerWithEmail(name, email, password);
+    } catch (e) {
+      debugPrint('[AuthService] Registration failed: $e');
+      rethrow;
+    }
+  }
+
+  Future<UserDocument> signInWithEmailPassword(
+      String email, String password) async {
     try {
       return await _authRepository.signInWithEmail(email, password);
     } catch (e) {
@@ -19,35 +30,21 @@ class AuthService {
     }
   }
 
-  Future<UserDocument> signInWithGoogle({String? mockEmail, String? mockDisplayName}) async {
+  Future<UserDocument> signInWithGoogle() async {
     try {
-      return await _authRepository.signInWithGoogle(
-        mockEmail: mockEmail,
-        mockDisplayName: mockDisplayName,
-      );
+      return await _authRepository.signInWithGoogle();
     } catch (e) {
       debugPrint('[AuthService] Google Sign-In failed: $e');
       rethrow;
     }
   }
 
-  Future<UserDocument> signInWithFacebook({
-    String? mockEmail,
-    String? mockDisplayName,
-    bool simulateUserCancel = false,
-    bool simulateNetworkError = false,
-    bool simulateAccountConflict = false,
-  }) async {
+  Future<UserDocument> signInWithFacebook() async {
     try {
-      return await _authRepository.signInWithFacebook(
-        mockEmail: mockEmail,
-        mockDisplayName: mockDisplayName,
-        simulateUserCancel: simulateUserCancel,
-        simulateNetworkError: simulateNetworkError,
-        simulateAccountConflict: simulateAccountConflict,
-      );
+      return await _authRepository.signInWithFacebook();
     } on AuthException catch (e) {
-      debugPrint('[AuthService] Facebook Authentication Exception [${e.code.name}]: ${e.message}');
+      debugPrint(
+          '[AuthService] Facebook Authentication Exception [${e.code.name}]: ${e.message}');
       rethrow;
     } catch (e) {
       debugPrint('[AuthService] Facebook Sign-In unexpected error: $e');
@@ -59,7 +56,15 @@ class AuthService {
     return await _authRepository.signInAsGuest();
   }
 
-  void signOut() {
-    _authRepository.signOut();
+  Future<void> signOut() {
+    return _authRepository.signOut();
+  }
+
+  Future<void> deleteAccount() async {
+    await _authRepository.deleteAccount();
+  }
+
+  Future<void> sendPasswordResetEmail(String email) {
+    return _authRepository.sendPasswordResetEmail(email);
   }
 }

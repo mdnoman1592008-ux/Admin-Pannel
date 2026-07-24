@@ -22,13 +22,6 @@ class _VoiceSearchModalState extends State<VoiceSearchModal>
       vsync: this,
       duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
-
-    // Simulate speech recognition result after 2.5s
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        widget.onResult('Interstellar 4K');
-      }
-    });
   }
 
   @override
@@ -55,7 +48,7 @@ class _VoiceSearchModalState extends State<VoiceSearchModal>
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.primaryContainer.withOpacity(0.15),
+                    color: AppColors.primaryContainer.withValues(alpha: 0.15),
                     border: Border.all(
                       color: AppColors.primaryContainer,
                       width: 2.0,
@@ -78,7 +71,7 @@ class _VoiceSearchModalState extends State<VoiceSearchModal>
             ),
             const SizedBox(height: 24),
             const Text(
-              'Listening...',
+              'Voice search is unavailable',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -87,7 +80,7 @@ class _VoiceSearchModalState extends State<VoiceSearchModal>
             ),
             const SizedBox(height: 8),
             const Text(
-              'Say movie title, genre, or actor name',
+              'Connect a speech-recognition provider to enable voice search.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,

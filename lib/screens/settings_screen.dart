@@ -3,27 +3,14 @@ import '../theme/app_colors.dart';
 import '../widgets/glass_container.dart';
 
 class SettingsScreen extends StatefulWidget {
-  final VoidCallback? onOpenAdmin;
-
-  const SettingsScreen({super.key, this.onOpenAdmin});
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _tripleClickCount = 0;
   String _cacheSize = '1.8 GB';
-
-  void _onProfileTap() {
-    _tripleClickCount++;
-    if (_tripleClickCount >= 3) {
-      _tripleClickCount = 0;
-      if (widget.onOpenAdmin != null) {
-        widget.onOpenAdmin!();
-      }
-    }
-  }
 
   void _clearCache() {
     setState(() {
@@ -54,84 +41,135 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 24),
 
-          // User Profile Glass Card (Triple Click for Secret Admin Access)
-          GestureDetector(
-            onTap: _onProfileTap,
-            child: GlassContainer(
-              borderRadius: 24,
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: AppColors.liquidGradient,
-                    ),
-                    child: const CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppColors.surface,
-                      child: Icon(Icons.person, color: Colors.white, size: 32),
+          GlassContainer(
+            borderRadius: 24,
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppColors.liquidGradient,
+                  ),
+                  child: const CircleAvatar(
+                    radius: 28,
+                    backgroundImage: NetworkImage(
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuDzKwJZepW88E0hJiIBM4Vxba1Rpq3U50h9tkiPvp7xZJQK-mO2jMmpBbUeSRQbi8RFiA4qI7p9OGX6D5KDd63ubsU9_i6fdkW6RC-mW64KoyzIwowoe6zwbzI62x9DLZTHlWO0eABkKj5stmyuXQDPc12JQywmKdc1yNjmFOwic1xpNRC0aXvh3z81Pg_DP6CVgOLwf9QQzDXP88WrgFJo4NERkeXKJgYInTZCxEoQaioAg0i_neIHlapRuo2-ngOhlcuZFphmeA',
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Alexander Vance',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Aether Premium',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'VIP IMAX Member • Secret Admin Ready',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.tertiary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'subscriber@ethercinema.com',
+                        style: TextStyle(
+                          color: Color(0xFFBBC9CF),
+                          fontSize: 13,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00CFFF).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF00CFFF).withValues(alpha: 0.5)),
+                  ),
+                  child: const Text(
+                    'VIP 4K',
+                    style: TextStyle(
+                      color: Color(0xFF00CFFF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-
           const SizedBox(height: 24),
 
-          // Settings List
-          _buildSettingTile(Icons.spatial_audio_off_rounded, 'Audio Quality', 'Dolby Atmos Spatial Audio', () {}),
-          _buildSettingTile(Icons.hd_rounded, 'Video Playback', 'IMAX Enhanced 4K HDR (Dailymotion Adaptive)', () {}),
-          _buildSettingTile(Icons.subtitles_rounded, 'Subtitles & Audio', 'English, Spanish, Japanese, French', () {}),
-          _buildSettingTile(Icons.cleaning_services_rounded, 'Clear Stream Cache', 'Current Cache: $_cacheSize', _clearCache),
-          _buildSettingTile(Icons.admin_panel_settings_rounded, 'Open Admin Dashboard', 'Manage Dailymotion Links & Catalog', () {
-            if (widget.onOpenAdmin != null) {
-              widget.onOpenAdmin!();
-            }
-          }),
+          _buildSettingTile(
+            icon: Icons.high_quality_rounded,
+            title: 'Streaming Quality',
+            subtitle: 'Auto (4K Ultra HD)',
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+
+          _buildSettingTile(
+            icon: Icons.download_for_offline_rounded,
+            title: 'Download Settings',
+            subtitle: 'Wi-Fi Only (1080p Full HD)',
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+
+          _buildSettingTile(
+            icon: Icons.cleaning_services_rounded,
+            title: 'Clear Cache',
+            subtitle: _cacheSize,
+            trailingText: 'CLEAR',
+            onTap: _clearCache,
+          ),
+          const SizedBox(height: 12),
+
+          _buildSettingTile(
+            icon: Icons.security_rounded,
+            title: 'Privacy & Security',
+            subtitle: 'Encrypted Token Storage',
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+
+          _buildSettingTile(
+            icon: Icons.info_outline_rounded,
+            title: 'App Version',
+            subtitle: 'v18.0 Commercial Release (Pure Client)',
+            onTap: () {},
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingTile(IconData icon, String title, String subtitle, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: GlassContainer(
-        borderRadius: 20,
-        padding: const EdgeInsets.all(16),
+  Widget _buildSettingTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    String? trailingText,
+    required VoidCallback onTap,
+  }) {
+    return GlassContainer(
+      borderRadius: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      child: InkWell(
         onTap: onTap,
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primaryContainer),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: const Color(0xFF00CFFF), size: 22),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -140,23 +178,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: const TextStyle(
+                      color: Color(0xFFBBC9CF),
                       fontSize: 12,
-                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+            if (trailingText != null)
+              Text(
+                trailingText,
+                style: const TextStyle(
+                  color: Color(0xFF00CFFF),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else
+              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 14),
           ],
         ),
       ),

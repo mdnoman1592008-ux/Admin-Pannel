@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/admin_config.dart';
 import '../supabase/supabase_initializer.dart';
 
@@ -25,7 +28,8 @@ class UploadLogger {
     required String reason,
     required int attempts,
   }) {
-    final entry = '[UPLOAD_FAILURE] Path: $path | Reason: $reason | Attempts: $attempts';
+    final entry =
+        '[UPLOAD_FAILURE] Path: $path | Reason: $reason | Attempts: $attempts';
     _logs.insert(0, entry);
     debugPrint('[UploadLogger] $entry');
   }
@@ -35,7 +39,8 @@ class UploadLogger {
     required int attempt,
     required String error,
   }) {
-    final entry = '[UPLOAD_RETRY] Path: $path | Attempt #$attempt | Error: $error';
+    final entry =
+        '[UPLOAD_RETRY] Path: $path | Attempt #$attempt | Error: $error';
     _logs.insert(0, entry);
     debugPrint('[UploadLogger] $entry');
   }
@@ -44,7 +49,12 @@ class UploadLogger {
 /// File Validation Engine for verifying formats and file sizes
 class FileValidator {
   static const int maxFileSizeBytes = 52428800; // 50 MB default limit
-  static const List<String> allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+  static const List<String> allowedImageExtensions = [
+    'jpg',
+    'jpeg',
+    'png',
+    'webp'
+  ];
   static const List<String> allowedSubtitleExtensions = ['srt', 'vtt'];
 
   static void validateImage(List<int> bytes, String extension) {
@@ -53,7 +63,8 @@ class FileValidator {
     }
     final cleanExt = extension.toLowerCase().replaceAll('.', '');
     if (!allowedImageExtensions.contains(cleanExt)) {
-      throw FormatException('Invalid image extension: $cleanExt. Allowed: $allowedImageExtensions');
+      throw FormatException(
+          'Invalid image extension: $cleanExt. Allowed: $allowedImageExtensions');
     }
   }
 
@@ -63,7 +74,8 @@ class FileValidator {
     }
     final cleanExt = extension.toLowerCase().replaceAll('.', '');
     if (!allowedSubtitleExtensions.contains(cleanExt)) {
-      throw FormatException('Invalid subtitle extension: $cleanExt. Allowed: $allowedSubtitleExtensions');
+      throw FormatException(
+          'Invalid subtitle extension: $cleanExt. Allowed: $allowedSubtitleExtensions');
     }
   }
 }
@@ -156,13 +168,13 @@ abstract class StorageProvider {
   });
 
   // Backward Compatibility Helpers
-  Future<String> uploadPoster(List<int> bytes, String fileName, {String? contentType});
-  Future<String> uploadBanner(List<int> bytes, String fileName, {String? contentType});
+  Future<String> uploadPoster(List<int> bytes, String fileName,
+      {String? contentType});
+  Future<String> uploadBanner(List<int> bytes, String fileName,
+      {String? contentType});
 }
 
 class SupabaseStorageService implements StorageProvider {
-  final Map<String, List<int>> _storageCache = {};
-
   String _generateUuid() {
     final now = DateTime.now();
     return '${now.millisecondsSinceEpoch}_${(100000 + (now.microsecondsSinceEpoch % 900000))}';
@@ -178,8 +190,8 @@ class SupabaseStorageService implements StorageProvider {
     UploadProgressCallback? onProgress,
     int maxRetries = 3,
   }) async {
-    final cleanPath = logicalPath.startsWith('/') ? logicalPath.substring(1) : logicalPath;
-    final storageKey = '${SupabaseInitializer.defaultBucket}/$cleanPath';
+    final cleanPath =
+        logicalPath.startsWith('/') ? logicalPath.substring(1) : logicalPath;
     final stopwatch = Stopwatch()..start();
     int attempts = 0;
     bool success = false;
@@ -188,14 +200,21 @@ class SupabaseStorageService implements StorageProvider {
       attempts++;
       try {
         onProgress?.call(0.1);
-        onProgress?.call(0.5);
-        _storageCache[storageKey] = bytes;
+        await SupabaseInitializer.client.storage
+            .from(SupabaseInitializer.defaultBucket)
+            .uploadBinary(
+              cleanPath,
+              Uint8List.fromList(bytes),
+              fileOptions: FileOptions(contentType: contentType, upsert: false),
+            );
         onProgress?.call(1.0);
         success = true;
       } catch (e) {
-        UploadLogger.logRetry(path: cleanPath, attempt: attempts, error: e.toString());
+        UploadLogger.logRetry(
+            path: cleanPath, attempt: attempts, error: e.toString());
         if (attempts >= maxRetries) {
-          UploadLogger.logFailure(path: cleanPath, reason: e.toString(), attempts: attempts);
+          UploadLogger.logFailure(
+              path: cleanPath, reason: e.toString(), attempts: attempts);
           rethrow;
         }
         await Future.delayed(Duration(milliseconds: 300 * attempts));
@@ -220,16 +239,23 @@ class SupabaseStorageService implements StorageProvider {
 
   @override
   Future<void> deletePath(String logicalPath) async {
-    final cleanPath = logicalPath.startsWith('/') ? logicalPath.substring(1) : logicalPath;
-    final storageKey = '${SupabaseInitializer.defaultBucket}/$cleanPath';
-    _storageCache.remove(storageKey);
-    debugPrint('[SupabaseStorageService] Deleted object from Supabase Storage: $cleanPath');
+    final cleanPath =
+        logicalPath.startsWith('/') ? logicalPath.substring(1) : logicalPath;
+    await SupabaseInitializer.client.storage
+        .from(SupabaseInitializer.defaultBucket)
+        .remove([cleanPath]);
+    debugPrint(
+        '[SupabaseStorageService] Deleted object from Supabase Storage: $cleanPath');
   }
 
   @override
   Future<void> deleteFileByUrl(String publicUrl) async {
-    if (publicUrl.contains('/storage/v1/object/public/${SupabaseInitializer.defaultBucket}/')) {
-      final path = publicUrl.split('/storage/v1/object/public/${SupabaseInitializer.defaultBucket}/').last;
+    if (publicUrl.contains(
+        '/storage/v1/object/public/${SupabaseInitializer.defaultBucket}/')) {
+      final path = publicUrl
+          .split(
+              '/storage/v1/object/public/${SupabaseInitializer.defaultBucket}/')
+          .last;
       await deletePath(path);
     }
   }
@@ -245,7 +271,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'posters/$movieId/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/jpeg', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/jpeg',
+        onProgress: onProgress);
   }
 
   @override
@@ -259,7 +289,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'banners/$movieId/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/jpeg', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/jpeg',
+        onProgress: onProgress);
   }
 
   @override
@@ -273,7 +307,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'posters/series/$seriesId/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/jpeg', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/jpeg',
+        onProgress: onProgress);
   }
 
   @override
@@ -287,7 +325,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'banners/series/$seriesId/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/jpeg', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/jpeg',
+        onProgress: onProgress);
   }
 
   @override
@@ -300,7 +342,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'logos/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/png', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/png',
+        onProgress: onProgress);
   }
 
   @override
@@ -314,7 +360,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'avatars/$userId/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/jpeg', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/jpeg',
+        onProgress: onProgress);
   }
 
   @override
@@ -328,7 +378,11 @@ class SupabaseStorageService implements StorageProvider {
     FileValidator.validateSubtitle(bytes, extension);
     final ext = _cleanExt(extension);
     final path = 'subtitles/$movieId/$language.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'text/plain', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'text/plain',
+        onProgress: onProgress);
   }
 
   @override
@@ -342,7 +396,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'thumbnails/$movieId/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/jpeg', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/jpeg',
+        onProgress: onProgress);
   }
 
   @override
@@ -356,7 +414,11 @@ class SupabaseStorageService implements StorageProvider {
     final ext = _cleanExt(extension);
     final uuid = _generateUuid();
     final path = 'categories/$categoryId/$uuid.$ext';
-    return uploadPath(bytes: bytes, logicalPath: path, contentType: 'image/png', onProgress: onProgress);
+    return uploadPath(
+        bytes: bytes,
+        logicalPath: path,
+        contentType: 'image/png',
+        onProgress: onProgress);
   }
 
   @override
@@ -379,7 +441,8 @@ class SupabaseStorageService implements StorageProvider {
   }
 
   @override
-  Future<String> uploadPoster(List<int> bytes, String fileName, {String? contentType}) {
+  Future<String> uploadPoster(List<int> bytes, String fileName,
+      {String? contentType}) {
     final ext = _cleanExt(fileName);
     final uuid = _generateUuid();
     return uploadPath(
@@ -390,7 +453,8 @@ class SupabaseStorageService implements StorageProvider {
   }
 
   @override
-  Future<String> uploadBanner(List<int> bytes, String fileName, {String? contentType}) {
+  Future<String> uploadBanner(List<int> bytes, String fileName,
+      {String? contentType}) {
     final ext = _cleanExt(fileName);
     final uuid = _generateUuid();
     return uploadPath(
@@ -411,7 +475,8 @@ class StorageService {
 
   static void setProvider(StorageProvider provider) {
     _provider = provider;
-    debugPrint('[StorageService] Swapped active storage provider to: ${provider.runtimeType}');
+    debugPrint(
+        '[StorageService] Swapped active storage provider to: ${provider.runtimeType}');
   }
 
   // Automated Upload Methods
@@ -422,7 +487,10 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadMoviePoster(
-          bytes: bytes, movieId: movieId, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          movieId: movieId,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> uploadMovieBanner({
     required List<int> bytes,
@@ -431,7 +499,10 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadMovieBanner(
-          bytes: bytes, movieId: movieId, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          movieId: movieId,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> uploadSeriesPoster({
     required List<int> bytes,
@@ -440,7 +511,10 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadSeriesPoster(
-          bytes: bytes, seriesId: seriesId, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          seriesId: seriesId,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> uploadSeriesBanner({
     required List<int> bytes,
@@ -449,14 +523,18 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadSeriesBanner(
-          bytes: bytes, seriesId: seriesId, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          seriesId: seriesId,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> uploadLogo({
     required List<int> bytes,
     String extension = 'png',
     UploadProgressCallback? onProgress,
   }) =>
-      _provider.uploadLogo(bytes: bytes, extension: extension, onProgress: onProgress);
+      _provider.uploadLogo(
+          bytes: bytes, extension: extension, onProgress: onProgress);
 
   Future<String> uploadAvatar({
     required List<int> bytes,
@@ -465,7 +543,10 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadAvatar(
-          bytes: bytes, userId: userId, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          userId: userId,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> uploadSubtitle({
     required List<int> bytes,
@@ -475,7 +556,11 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadSubtitle(
-          bytes: bytes, movieId: movieId, language: language, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          movieId: movieId,
+          language: language,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> uploadTrailerThumbnail({
     required List<int> bytes,
@@ -484,7 +569,10 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadTrailerThumbnail(
-          bytes: bytes, movieId: movieId, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          movieId: movieId,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> uploadCategoryIcon({
     required List<int> bytes,
@@ -493,7 +581,10 @@ class StorageService {
     UploadProgressCallback? onProgress,
   }) =>
       _provider.uploadCategoryIcon(
-          bytes: bytes, categoryId: categoryId, extension: extension, onProgress: onProgress);
+          bytes: bytes,
+          categoryId: categoryId,
+          extension: extension,
+          onProgress: onProgress);
 
   Future<String> replaceFile({
     required String oldPublicUrl,
@@ -510,13 +601,16 @@ class StorageService {
         onProgress: onProgress,
       );
 
-  Future<void> deleteFileByUrl(String publicUrl) => _provider.deleteFileByUrl(publicUrl);
+  Future<void> deleteFileByUrl(String publicUrl) =>
+      _provider.deleteFileByUrl(publicUrl);
 
   // Backward Compatible Methods
-  Future<String> uploadPoster(List<int> bytes, String fileName, {String? contentType}) =>
+  Future<String> uploadPoster(List<int> bytes, String fileName,
+          {String? contentType}) =>
       _provider.uploadPoster(bytes, fileName, contentType: contentType);
 
-  Future<String> uploadBanner(List<int> bytes, String fileName, {String? contentType}) =>
+  Future<String> uploadBanner(List<int> bytes, String fileName,
+          {String? contentType}) =>
       _provider.uploadBanner(bytes, fileName, contentType: contentType);
 
   Future<void> saveContinueWatching(String movieId, double progress) async {

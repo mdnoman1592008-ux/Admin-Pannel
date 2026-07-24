@@ -1,27 +1,8 @@
 // File generated for Ether Cinema Enterprise Firebase Options.
 // ignore_for_file: type=lint
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
-
-class FirebaseOptions {
-  final String apiKey;
-  final String appId;
-  final String messagingSenderId;
-  final String projectId;
-  final String? authDomain;
-  final String? storageBucket;
-  final String? iosBundleId;
-
-  const FirebaseOptions({
-    required this.apiKey,
-    required this.appId,
-    required this.messagingSenderId,
-    required this.projectId,
-    this.authDomain,
-    this.storageBucket,
-    this.iosBundleId,
-  });
-}
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 class DefaultFirebaseOptions {

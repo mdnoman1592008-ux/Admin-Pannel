@@ -12,6 +12,7 @@ import 'package:ether_cinema/core/notifications/notification_service.dart';
 import 'package:ether_cinema/core/downloads/encrypted_download_manager.dart';
 import 'package:ether_cinema/core/analytics/crash_reporting_service.dart';
 import 'package:ether_cinema/core/services/movie_repository.dart';
+import 'package:ether_cinema/core/cms/cms_repository.dart';
 
 void main() {
   group('Ether Cinema Final Master Production Release Audit Suite', () {
@@ -66,6 +67,18 @@ void main() {
     });
 
     test('10. CrashReportingService & MovieRepository catalog integrity', () async {
+      CmsRepository().publishMovie(
+        CmsMovieItem(
+          id: 'val_m1',
+          title: 'Validation Movie',
+          synopsis: 'Synopsis',
+          dailymotionVideoId: 'x8m00bc',
+          isPublished: true,
+          releaseDate: DateTime.now(),
+          genres: ['Sci-Fi'],
+        ),
+        'admin',
+      );
       final catalog = await MovieRepository().getTrending();
       expect(catalog.isNotEmpty, true);
       final crashDiag = CrashReportingService.getDiagnostics();

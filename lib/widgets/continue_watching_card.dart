@@ -41,7 +41,7 @@ class ContinueWatchingCard extends StatelessWidget {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       boxShadow: const [
                         BoxShadow(
                           color: AppColors.glassGlowBlue,

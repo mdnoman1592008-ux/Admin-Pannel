@@ -9,6 +9,10 @@
 -keep class io.flutter.provider.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
+# Google Play Core / Split Compat R8 Rules (Fixes missing SplitCompatApplication & SplitInstallManager)
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+
 # Preserve Flutter Entry Points and Annotations
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 

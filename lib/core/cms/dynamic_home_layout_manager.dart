@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../models/home_section_model.dart';
+import 'home_section_repository.dart';
 
 class ContentRailConfig {
   final String id;
   final String title;
-  final String layout; // horizontal, grid, hero
-  final String sorting; // priority, rating, releaseDate
-  final String category; // ALL, Sci-Fi, Natok, Anime, etc.
+  final String layout;
+  final String sorting;
+  final String category;
   final int maximumItems;
   final bool isVisible;
 
@@ -45,26 +47,37 @@ class DynamicHomeLayoutManager {
   factory DynamicHomeLayoutManager() => _instance;
   DynamicHomeLayoutManager._internal();
 
-  final List<ContentRailConfig> _rails = [
-    const ContentRailConfig(id: 'hero_banner', title: 'Hero Carousel', layout: 'hero', sorting: 'priority', category: 'ALL', maximumItems: 5, isVisible: true),
-    const ContentRailConfig(id: 'categories', title: 'Category Pills', layout: 'horizontal', sorting: 'priority', category: 'ALL', maximumItems: 17, isVisible: true),
-    const ContentRailConfig(id: 'continue_watching', title: 'Continue Watching', layout: 'horizontal', sorting: 'lastWatched', category: 'ALL', maximumItems: 10, isVisible: true),
-    const ContentRailConfig(id: 'trending', title: 'Trending Now', layout: 'horizontal', sorting: 'rating', category: 'ALL', maximumItems: 10, isVisible: true),
-    const ContentRailConfig(id: 'recommended', title: 'AI Recommended', layout: 'horizontal', sorting: 'aiScore', category: 'ALL', maximumItems: 10, isVisible: true),
-    const ContentRailConfig(id: 'anime', title: 'Anime & Cyberpunk', layout: 'horizontal', sorting: 'releaseDate', category: 'Anime', maximumItems: 10, isVisible: true),
-  ];
-
+  final HomeSectionRepository _sectionRepo = HomeSectionRepository();
   final Map<String, int> _watchProgressMs = {};
-
   final _layoutStreamController = StreamController<List<ContentRailConfig>>.broadcast();
 
-  List<ContentRailConfig> get rails => List.unmodifiable(_rails.where((r) => r.isVisible));
+  List<ContentRailConfig> get rails {
+    return _sectionRepo.enabledSections.map((sec) {
+      final legacyId = sec.id == 'sec_hero'
+          ? 'hero_banner'
+          : (sec.id == 'sec_trending'
+              ? 'trending'
+              : (sec.id == 'sec_categories' ? 'categories' : sec.id));
+      return ContentRailConfig(
+        id: legacyId,
+        title: sec.title,
+        layout: sec.layoutType.name,
+        sorting: sec.contentSource.name,
+        category: sec.filters['category'] ?? 'ALL',
+        maximumItems: sec.maxItems,
+        isVisible: sec.isEnabled,
+      );
+    }).toList();
+  }
+
   Stream<List<ContentRailConfig>> get layoutStream => _layoutStreamController.stream;
 
   void reorderRails(int oldIndex, int newIndex) {
+    final currentSecs = List<HomeSectionModel>.from(_sectionRepo.sections);
     if (oldIndex < newIndex) newIndex -= 1;
-    final item = _rails.removeAt(oldIndex);
-    _rails.insert(newIndex, item);
+    final item = currentSecs.removeAt(oldIndex);
+    currentSecs.insert(newIndex, item);
+    _sectionRepo.reorderSections(currentSecs.map((s) => s.id).toList());
     _layoutStreamController.add(rails);
     debugPrint('[DynamicHomeLayoutManager] Reordered rail ${item.title} to position $newIndex');
   }

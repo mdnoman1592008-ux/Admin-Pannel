@@ -52,9 +52,9 @@ class _GlassShimmerCardState extends State<GlassShimmerCard>
               borderRadius: BorderRadius.circular(widget.borderRadius),
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.05),
-                  Colors.white.withOpacity(0.18),
-                  Colors.white.withOpacity(0.05),
+                  Colors.white.withValues(alpha: 0.05),
+                  Colors.white.withValues(alpha: 0.18),
+                  Colors.white.withValues(alpha: 0.05),
                 ],
                 stops: const [0.0, 0.5, 1.0],
                 begin: Alignment(-1.0 + (_controller.value * 2.0), -0.3),
@@ -80,7 +80,7 @@ class _GlassShimmerCardState extends State<GlassShimmerCard>
                     width: widget.width * 0.4,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryContainer.withOpacity(0.3),
+                      color: AppColors.primaryContainer.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),

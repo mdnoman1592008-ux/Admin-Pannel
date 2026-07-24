@@ -55,56 +55,21 @@ class MovieCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Badges
-                    if (movie.tags.isNotEmpty)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: movie.tags.map((tag) {
-                            final isVip = tag == 'VIP';
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(
-                                  color: isVip
-                                      ? AppColors.tertiary.withOpacity(0.5)
-                                      : AppColors.primaryContainer.withOpacity(0.5),
-                                ),
-                              ),
-                              child: Text(
-                                tag,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: isVip ? AppColors.tertiary : AppColors.primaryContainer,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    // Rating overlay
+                    // 3-dot Menu overlay
                     Positioned(
-                      bottom: 8,
-                      left: 8,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.star_rounded, color: AppColors.tertiary, size: 16),
-                          const SizedBox(width: 2),
-                          Text(
-                            movie.rating.toString(),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.more_vert_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                       ),
                     ),
                   ],
@@ -122,14 +87,22 @@ class MovieCard extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            if (movie.genres.isNotEmpty)
-              Text(
-                '${movie.genres.first} • ${movie.releaseYear}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.onSurfaceVariant.withOpacity(0.7),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  movie.rating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
+              ],
+            ),
+
           ],
         ),
       ),

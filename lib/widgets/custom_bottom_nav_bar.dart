@@ -32,10 +32,10 @@ class CustomBottomNavBar extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(36),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   width: 1.0,
                 ),
                 boxShadow: const [
@@ -70,7 +70,7 @@ class CustomBottomNavBar extends StatelessWidget {
                             item.icon,
                             color: isSelected
                                 ? AppColors.primaryContainer
-                                : AppColors.onSurfaceVariant.withOpacity(0.6),
+                                : AppColors.onSurfaceVariant.withValues(alpha: 0.6),
                             size: 24,
                           ),
                           const SizedBox(height: 2),
@@ -81,7 +81,7 @@ class CustomBottomNavBar extends StatelessWidget {
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               color: isSelected
                                   ? AppColors.primaryContainer
-                                  : AppColors.onSurfaceVariant.withOpacity(0.6),
+                                  : AppColors.onSurfaceVariant.withValues(alpha: 0.6),
                             ),
                           ),
                         ],

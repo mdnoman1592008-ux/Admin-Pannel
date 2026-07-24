@@ -21,26 +21,26 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
   final _originalTitleCtrl = TextEditingController();
   final _taglineCtrl = TextEditingController();
   final _synopsisCtrl = TextEditingController();
-  final _runtimeCtrl = TextEditingController(text: '120 min');
-  final _yearCtrl = TextEditingController(text: '2026');
-  final _imdbCtrl = TextEditingController(text: '8.5');
+  final _runtimeCtrl = TextEditingController();
+  final _yearCtrl = TextEditingController();
+  final _imdbCtrl = TextEditingController();
 
   // Step 2: Categories
-  final _categoryCtrl = TextEditingController(text: 'Sci-Fi Epic');
-  bool _isTrending = true;
-  bool _isTop10 = true;
-  bool _isFeatured = true;
+  final _categoryCtrl = TextEditingController();
+  bool _isTrending = false;
+  bool _isTop10 = false;
+  bool _isFeatured = false;
 
   // Step 3: Media
-  final _posterCtrl = TextEditingController(text: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1');
-  final _bannerCtrl = TextEditingController(text: 'https://images.unsplash.com/photo-1578632767115-351597cf2477');
+  final _posterCtrl = TextEditingController();
+  final _bannerCtrl = TextEditingController();
 
   // Step 4: Video
-  final _videoIdCtrl = TextEditingController(text: 'k4x89z12');
-  final _trailerIdCtrl = TextEditingController(text: 't98z11');
+  final _videoIdCtrl = TextEditingController();
+  final _trailerIdCtrl = TextEditingController();
 
   // Step 5: Subtitles
-  final _subtitleUrlCtrl = TextEditingController(text: 'https://cdn.ethercinema.app/subs/en.vtt');
+  final _subtitleUrlCtrl = TextEditingController();
 
   // Step 6: SEO
   final _slugCtrl = TextEditingController();
@@ -85,11 +85,12 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
     }
   }
 
-  void _saveMovieToFirestore() {
-    final title = _titleCtrl.text.trim().isEmpty ? 'Untitled Movie' : _titleCtrl.text.trim();
-    final category = _categoryCtrl.text.trim().isEmpty ? 'Sci-Fi' : _categoryCtrl.text.trim();
+  Future<void> _saveMovieToFirestore() async {
+    final title = _titleCtrl.text.trim();
+    final category = _categoryCtrl.text.trim();
+    if (title.isEmpty || category.isEmpty) return;
 
-    LiveBackendService.instance.addMovie(LiveMovie(
+    await LiveBackendService.instance.addMovie(LiveMovie(
       id: 'm_${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       category: category,
@@ -139,14 +140,16 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
             gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.auto_awesome_rounded, color: Colors.black, size: 20),
+          child: const Icon(Icons.auto_awesome_rounded,
+              color: Colors.black, size: 20),
         ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Premium 7-Step Content Wizard', style: AppTextStyles.h2()),
-            Text('Publish Live Movies & TV Series to Firestore', style: AppTextStyles.bodySm()),
+            Text('Publish Live Movies & TV Series to Firestore',
+                style: AppTextStyles.bodySm()),
           ],
         ),
         const Spacer(),
@@ -192,13 +195,15 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
               children: [
                 Text(
                   'STEP ${i + 1}',
-                  style: AppTextStyles.badge().copyWith(color: color, fontSize: 9),
+                  style:
+                      AppTextStyles.badge().copyWith(color: color, fontSize: 9),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   stepTitles[i],
                   style: AppTextStyles.bodySm().copyWith(
-                    color: isActive ? AppColors.textPrimary : AppColors.textSecond,
+                    color:
+                        isActive ? AppColors.textPrimary : AppColors.textSecond,
                     fontSize: 10,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                   ),
@@ -245,14 +250,18 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
               Expanded(
                 child: TextField(
                   controller: _titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Movie Title *', hintText: 'e.g. Nebula Drift 4K'),
+                  decoration: const InputDecoration(
+                      labelText: 'Movie Title *',
+                      hintText: 'e.g. Nebula Drift 4K'),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: TextField(
                   controller: _originalTitleCtrl,
-                  decoration: const InputDecoration(labelText: 'Original Title', hintText: 'e.g. Nebula Drift'),
+                  decoration: const InputDecoration(
+                      labelText: 'Original Title',
+                      hintText: 'e.g. Nebula Drift'),
                 ),
               ),
             ],
@@ -260,13 +269,17 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _taglineCtrl,
-            decoration: const InputDecoration(labelText: 'Tagline', hintText: 'e.g. Beyond the stars lies eternity'),
+            decoration: const InputDecoration(
+                labelText: 'Tagline',
+                hintText: 'e.g. Beyond the stars lies eternity'),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _synopsisCtrl,
             maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Full Synopsis', hintText: 'Detailed movie storyline description...'),
+            decoration: const InputDecoration(
+                labelText: 'Full Synopsis',
+                hintText: 'Detailed movie storyline description...'),
           ),
           const SizedBox(height: 16),
           Row(
@@ -307,7 +320,9 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _categoryCtrl,
-            decoration: const InputDecoration(labelText: 'Primary Category', hintText: 'e.g. Sci-Fi, Action, Drama'),
+            decoration: const InputDecoration(
+                labelText: 'Primary Category',
+                hintText: 'e.g. Sci-Fi, Action, Drama'),
           ),
           const SizedBox(height: 24),
           Text('Playlist Feature Toggles', style: AppTextStyles.h4()),
@@ -343,16 +358,19 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Step 3: Media Assets & Live Preview', style: AppTextStyles.h3()),
+          Text('Step 3: Media Assets & Live Preview',
+              style: AppTextStyles.h3()),
           const SizedBox(height: 16),
           TextField(
             controller: _posterCtrl,
-            decoration: const InputDecoration(labelText: 'Poster Image URL (2:3 Aspect Ratio)'),
+            decoration: const InputDecoration(
+                labelText: 'Poster Image URL (2:3 Aspect Ratio)'),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _bannerCtrl,
-            decoration: const InputDecoration(labelText: 'Banner / Backdrop URL (16:9 Aspect Ratio)'),
+            decoration: const InputDecoration(
+                labelText: 'Banner / Backdrop URL (16:9 Aspect Ratio)'),
           ),
           const SizedBox(height: 24),
           Text('Live Asset Preview Card', style: AppTextStyles.h4()),
@@ -370,10 +388,12 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
                   width: 80,
                   decoration: const BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
+                    borderRadius:
+                        BorderRadius.horizontal(left: Radius.circular(12)),
                   ),
                   child: const Center(
-                    child: Icon(Icons.movie_rounded, color: Colors.black, size: 32),
+                    child: Icon(Icons.movie_rounded,
+                        color: Colors.black, size: 32),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -382,9 +402,15 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_titleCtrl.text.isEmpty ? 'Movie Title Preview' : _titleCtrl.text, style: AppTextStyles.h3()),
+                      Text(
+                          _titleCtrl.text.isEmpty
+                              ? 'Movie Title Preview'
+                              : _titleCtrl.text,
+                          style: AppTextStyles.h3()),
                       const SizedBox(height: 4),
-                      Text('Category: ${_categoryCtrl.text} | Year: ${_yearCtrl.text}', style: AppTextStyles.bodySm()),
+                      Text(
+                          'Category: ${_categoryCtrl.text} | Year: ${_yearCtrl.text}',
+                          style: AppTextStyles.bodySm()),
                     ],
                   ),
                 ),
@@ -401,16 +427,19 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Step 4: Video Player & Stream Sources', style: AppTextStyles.h3()),
+          Text('Step 4: Video Player & Stream Sources',
+              style: AppTextStyles.h3()),
           const SizedBox(height: 16),
           TextField(
             controller: _videoIdCtrl,
-            decoration: const InputDecoration(labelText: 'Dailymotion / HLS Video Stream ID *'),
+            decoration: const InputDecoration(
+                labelText: 'Dailymotion / HLS Video Stream ID *'),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _trailerIdCtrl,
-            decoration: const InputDecoration(labelText: 'Trailer Video Stream ID'),
+            decoration:
+                const InputDecoration(labelText: 'Trailer Video Stream ID'),
           ),
         ],
       ),
@@ -426,7 +455,8 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _subtitleUrlCtrl,
-            decoration: const InputDecoration(labelText: 'English WebVTT / SRT Subtitle URL (.vtt, .srt)'),
+            decoration: const InputDecoration(
+                labelText: 'English WebVTT / SRT Subtitle URL (.vtt, .srt)'),
           ),
         ],
       ),
@@ -442,7 +472,8 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: _slugCtrl,
-            decoration: const InputDecoration(labelText: 'SEO URL Slug (e.g. nebula-drift-4k)'),
+            decoration: const InputDecoration(
+                labelText: 'SEO URL Slug (e.g. nebula-drift-4k)'),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -463,7 +494,8 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: _publishStatus,
-            decoration: const InputDecoration(labelText: 'Publishing Status State'),
+            decoration:
+                const InputDecoration(labelText: 'Publishing Status State'),
             items: ['Draft', 'Review', 'Approved', 'Scheduled', 'Published']
                 .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                 .toList(),
@@ -479,12 +511,14 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 24),
+                const Icon(Icons.check_circle_rounded,
+                    color: AppColors.success, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Ready to push live record to Firestore collection "movies" with realtime sync.',
-                    style: AppTextStyles.body().copyWith(color: AppColors.success),
+                    style:
+                        AppTextStyles.body().copyWith(color: AppColors.success),
                   ),
                 ),
               ],
@@ -506,8 +540,12 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           ),
         const Spacer(),
         GlowButton(
-          label: _currentStep == _totalSteps - 1 ? 'Publish to Firestore' : 'Continue Step',
-          icon: _currentStep == _totalSteps - 1 ? Icons.cloud_upload_rounded : Icons.arrow_forward_rounded,
+          label: _currentStep == _totalSteps - 1
+              ? 'Publish to Firestore'
+              : 'Continue Step',
+          icon: _currentStep == _totalSteps - 1
+              ? Icons.cloud_upload_rounded
+              : Icons.arrow_forward_rounded,
           color: AppColors.primary,
           isSmall: true,
           onPressed: _onNextStep,

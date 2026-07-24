@@ -1,5 +1,7 @@
 import 'cast_member.dart';
 import 'episode.dart';
+import 'season.dart';
+import 'streaming_source.dart';
 
 class Movie {
   final String id;
@@ -19,8 +21,13 @@ class Movie {
   final bool isAnime;
   final bool isNewRelease;
   final bool isTopRated;
+  final bool isUnreleased;
+  final DateTime? scheduledPublishDate;
+  final int notifyMeCount;
   final List<CastMember> cast;
   final List<Episode> episodes;
+  final List<Season> seasons;
+  final List<StreamingSource> streamingSources;
 
   const Movie({
     required this.id,
@@ -38,9 +45,39 @@ class Movie {
     this.isAnime = false,
     this.isNewRelease = false,
     this.isTopRated = false,
+    this.isUnreleased = false,
+    this.scheduledPublishDate,
+    this.notifyMeCount = 0,
     this.watchProgress,
     this.episodeInfo,
     this.cast = const [],
     this.episodes = const [],
+    this.seasons = const [],
+    this.streamingSources = const [
+      StreamingSource(
+        id: 'src1',
+        provider: StreamingProvider.dailymotion,
+        urlOrId: 'x8m00bc',
+        priority: 1,
+      ),
+      StreamingSource(
+        id: 'src2',
+        provider: StreamingProvider.youtube,
+        urlOrId: 'dQw4w9WgXcQ',
+        priority: 2,
+      ),
+      StreamingSource(
+        id: 'src3',
+        provider: StreamingProvider.hls,
+        urlOrId: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+        priority: 3,
+      ),
+      StreamingSource(
+        id: 'src4',
+        provider: StreamingProvider.mp4,
+        urlOrId: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        priority: 4,
+      ),
+    ],
   });
 }

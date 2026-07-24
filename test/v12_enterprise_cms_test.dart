@@ -16,7 +16,7 @@ void main() {
       expect(cmsRepo.canAccessFullCms(ExtendedUserRole.superAdmin), true);
     });
 
-    test('Movie publication should add item and trigger audit log entry', () async {
+    test('Movie publication should add item and trigger audit log entry', () {
       final initialCount = cmsRepo.movies.length;
       final newItem = CmsMovieItem(
         id: 'm3',
@@ -28,7 +28,7 @@ void main() {
         genres: const ['Sci-Fi', 'Documentary'],
       );
 
-      await cmsRepo.publishMovie(newItem, 'admin@ethercinema.com');
+      cmsRepo.publishMovie(newItem, 'admin@ethercinema.com');
       expect(cmsRepo.movies.length, initialCount + 1);
       expect(CmsAuditLogger.logs.first.contains('PUBLISH_MOVIE'), true);
     });

@@ -1,10 +1,38 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ether_cinema/core/services/movie_repository.dart';
 import 'package:ether_cinema/core/mappers/movie_mapper.dart';
+import 'package:ether_cinema/core/cms/cms_repository.dart';
 
 void main() {
   group('MovieRepository Unit Tests', () {
     final repository = MovieRepository();
+
+    setUp(() {
+      CmsRepository().publishMovie(
+        CmsMovieItem(
+          id: 'test_m1',
+          title: 'Silicon Soul',
+          synopsis: 'Synopsis',
+          dailymotionVideoId: 'x8m00bc',
+          isPublished: true,
+          releaseDate: DateTime.now(),
+          genres: ['Sci-Fi'],
+        ),
+        'admin',
+      );
+      CmsRepository().publishMovie(
+        CmsMovieItem(
+          id: 'test_m2',
+          title: 'Crystalline Horizon',
+          synopsis: 'Synopsis',
+          dailymotionVideoId: 'x8k92b1',
+          isPublished: true,
+          releaseDate: DateTime.now(),
+          genres: ['Drama'],
+        ),
+        'admin',
+      );
+    });
 
     test('getTrending should return non-empty movie list', () async {
       final movies = await repository.getTrending();

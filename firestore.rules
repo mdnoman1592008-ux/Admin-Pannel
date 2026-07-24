@@ -20,13 +20,21 @@ service cloud.firestore {
     }
 
     function isEditor() {
-      return isAuthenticated() && (getUserRole() == 'editor' || isAdmin());
+      return isAuthenticated() && (getUserRole() == 'editor' || getUserRole() == 'moderator' || isAdmin());
     }
 
     // Users Collection Rules
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() || request.auth.uid == userId;
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Clients can create only their own standard user document. Privileged
+      // roles must be assigned from a trusted server/Admin SDK.
+      allow create: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.role == 'user';
+      allow update: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        || isAdmin();
+      allow delete: if (isAuthenticated() && request.auth.uid == userId) || isSuperAdmin();
     }
 
     // Movies Collection Rules
@@ -45,6 +53,13 @@ service cloud.firestore {
 
     // Categories Collection Rules
     match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Dynamic storefront layout. Public clients can read; only content staff
+    // can change rails, ordering, or visibility.
+    match /home_sections/{sectionId} {
       allow read: if true;
       allow write: if isEditor();
     }

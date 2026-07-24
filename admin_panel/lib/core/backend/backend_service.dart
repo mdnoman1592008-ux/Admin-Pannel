@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 /// Live Movie Entity
@@ -40,14 +41,47 @@ class LiveMovie {
       isPublished: data['isPublished'] as bool? ?? false,
       isFeatured: data['isFeatured'] as bool? ?? false,
       year: data['year'] as String? ?? '2024',
-      createdAt: data['createdAt'] != null
-          ? DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
-          ? DateTime.tryParse(data['updatedAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt: _asDateTime(data['createdAt']),
+      updatedAt: _asDateTime(data['updatedAt']),
     );
   }
+
+  Map<String, dynamic> toFirestore() => {
+        'title': title,
+        'category': category,
+        'genres': [category],
+        'synopsis': '',
+        'dailymotionVideoId': '',
+        'posterUrl': posterUrl,
+        'bannerUrl': bannerUrl,
+        'views': views,
+        'isPublished': isPublished,
+        'isFeatured': isFeatured,
+        'year': year,
+        'releaseDate': Timestamp.fromDate(
+            DateTime.tryParse('$year-01-01') ?? DateTime.now()),
+        'createdAt': Timestamp.fromDate(createdAt),
+        'updatedAt': Timestamp.fromDate(updatedAt),
+      };
+
+  LiveMovie copyWith({bool? isPublished, bool? isFeatured}) => LiveMovie(
+        id: id,
+        title: title,
+        category: category,
+        posterUrl: posterUrl,
+        bannerUrl: bannerUrl,
+        views: views,
+        isPublished: isPublished ?? this.isPublished,
+        isFeatured: isFeatured ?? this.isFeatured,
+        year: year,
+        createdAt: createdAt,
+        updatedAt: DateTime.now(),
+      );
+}
+
+DateTime _asDateTime(Object? value) {
+  if (value is Timestamp) return value.toDate();
+  return DateTime.tryParse(value?.toString() ?? '') ?? DateTime.now();
 }
 
 /// Live TV Series Entity
@@ -171,7 +205,8 @@ class LiveNotification {
     required this.sentAt,
   });
 
-  factory LiveNotification.fromFirestore(Map<String, dynamic> data, String docId) {
+  factory LiveNotification.fromFirestore(
+      Map<String, dynamic> data, String docId) {
     return LiveNotification(
       id: docId,
       title: data['title'] as String? ?? 'Push Notification',
@@ -234,6 +269,10 @@ class LiveBackendService extends ChangeNotifier {
 
   LiveBackendService._internal();
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _moviesSubscription;
+  bool _started = false;
+
   // In-memory live Firestore collections (emulating realtime Firestore streams)
   final List<LiveMovie> _movies = [];
   final List<LiveSeries> _series = [];
@@ -246,20 +285,28 @@ class LiveBackendService extends ChangeNotifier {
   // Controllers for realtime streams
   final _moviesController = StreamController<List<LiveMovie>>.broadcast();
   final _seriesController = StreamController<List<LiveSeries>>.broadcast();
-  final _categoriesController = StreamController<List<LiveCategory>>.broadcast();
+  final _categoriesController =
+      StreamController<List<LiveCategory>>.broadcast();
   final _auditLogsController = StreamController<List<LiveAuditLog>>.broadcast();
-  final _notificationsController = StreamController<List<LiveNotification>>.broadcast();
-  final _remoteConfigController = StreamController<List<LiveConfigKey>>.broadcast();
-  final _storageFilesController = StreamController<List<LiveStorageFile>>.broadcast();
+  final _notificationsController =
+      StreamController<List<LiveNotification>>.broadcast();
+  final _remoteConfigController =
+      StreamController<List<LiveConfigKey>>.broadcast();
+  final _storageFilesController =
+      StreamController<List<LiveStorageFile>>.broadcast();
 
   // Realtime Streams exposed to UI
   Stream<List<LiveMovie>> get moviesStream => _moviesController.stream;
   Stream<List<LiveSeries>> get seriesStream => _seriesController.stream;
-  Stream<List<LiveCategory>> get categoriesStream => _categoriesController.stream;
+  Stream<List<LiveCategory>> get categoriesStream =>
+      _categoriesController.stream;
   Stream<List<LiveAuditLog>> get auditLogsStream => _auditLogsController.stream;
-  Stream<List<LiveNotification>> get notificationsStream => _notificationsController.stream;
-  Stream<List<LiveConfigKey>> get remoteConfigStream => _remoteConfigController.stream;
-  Stream<List<LiveStorageFile>> get storageFilesStream => _storageFilesController.stream;
+  Stream<List<LiveNotification>> get notificationsStream =>
+      _notificationsController.stream;
+  Stream<List<LiveConfigKey>> get remoteConfigStream =>
+      _remoteConfigController.stream;
+  Stream<List<LiveStorageFile>> get storageFilesStream =>
+      _storageFilesController.stream;
 
   List<LiveMovie> get movies => List.unmodifiable(_movies);
   List<LiveSeries> get series => List.unmodifiable(_series);
@@ -269,19 +316,47 @@ class LiveBackendService extends ChangeNotifier {
   List<LiveConfigKey> get remoteConfig => List.unmodifiable(_remoteConfig);
   List<LiveStorageFile> get storageFiles => List.unmodifiable(_storageFiles);
 
+  /// Starts a single Firestore listener for the catalog. The in-memory list is
+  /// updated from document changes, so the dashboard does not poll or rebuild
+  /// the consumer app for unrelated admin activity.
+  Future<void> start() async {
+    if (_started) return;
+    _started = true;
+    _moviesSubscription =
+        _firestore.collection('movies').snapshots().listen((snapshot) {
+      _movies
+        ..clear()
+        ..addAll(snapshot.docs
+            .map((doc) => LiveMovie.fromFirestore(doc.data(), doc.id)));
+      _movies.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      _moviesController.add(List.unmodifiable(_movies));
+      notifyListeners();
+    }, onError: (Object error, StackTrace stackTrace) {
+      debugPrint('[LiveBackendService] movies listener failed: $error');
+    });
+  }
+
   /// Add new movie to live Firestore collection
   Future<void> addMovie(LiveMovie movie) async {
-    _movies.insert(0, movie);
-    _moviesController.add(_movies);
-    addAuditLog(LiveAuditLog(
-      id: 'log_${DateTime.now().millisecondsSinceEpoch}',
-      severity: 'success',
-      title: 'Movie Created',
-      description: 'Movie "${movie.title}" added to Firestore collection "movies"',
-      timestamp: 'Just now',
-      createdAt: DateTime.now(),
-    ));
-    notifyListeners();
+    await _firestore
+        .collection('movies')
+        .doc(movie.id)
+        .set(movie.toFirestore());
+    await _writeAudit('Movie Created',
+        'Movie "${movie.title}" added to Firestore collection "movies"');
+  }
+
+  Future<void> updateMovie(LiveMovie movie) async {
+    await _firestore.collection('movies').doc(movie.id).set(
+          movie.toFirestore()..['updatedAt'] = FieldValue.serverTimestamp(),
+          SetOptions(merge: true),
+        );
+    await _writeAudit('Movie Updated', 'Movie "${movie.title}" was updated.');
+  }
+
+  Future<void> deleteMovie(String movieId) async {
+    await _firestore.collection('movies').doc(movieId).delete();
+    await _writeAudit('Movie Deleted', 'Movie "$movieId" was removed.');
   }
 
   /// Add new series to live Firestore collection
@@ -292,7 +367,8 @@ class LiveBackendService extends ChangeNotifier {
       id: 'log_${DateTime.now().millisecondsSinceEpoch}',
       severity: 'success',
       title: 'Series Created',
-      description: 'TV Series "${s.title}" added to Firestore collection "series"',
+      description:
+          'TV Series "${s.title}" added to Firestore collection "series"',
       timestamp: 'Just now',
       createdAt: DateTime.now(),
     ));
@@ -307,7 +383,8 @@ class LiveBackendService extends ChangeNotifier {
       id: 'log_${DateTime.now().millisecondsSinceEpoch}',
       severity: 'info',
       title: 'Category Created',
-      description: 'Category "${cat.name}" added to Firestore collection "categories"',
+      description:
+          'Category "${cat.name}" added to Firestore collection "categories"',
       timestamp: 'Just now',
       createdAt: DateTime.now(),
     ));
@@ -321,6 +398,16 @@ class LiveBackendService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _writeAudit(String title, String description) async {
+    await _firestore.collection('audit_logs').add({
+      'severity': 'info',
+      'title': title,
+      'description': description,
+      'timestamp': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// Send FCM Push Notification
   Future<void> sendNotification(LiveNotification notif) async {
     _notifications.insert(0, notif);
@@ -329,7 +416,8 @@ class LiveBackendService extends ChangeNotifier {
       id: 'log_${DateTime.now().millisecondsSinceEpoch}',
       severity: 'info',
       title: 'Notification Sent',
-      description: 'FCM Push "${notif.title}" delivered to ${notif.recipientCount} subscribers',
+      description:
+          'FCM Push "${notif.title}" delivered to ${notif.recipientCount} subscribers',
       timestamp: 'Just now',
       createdAt: DateTime.now(),
     ));
@@ -364,7 +452,8 @@ class LiveBackendService extends ChangeNotifier {
       id: 'log_${DateTime.now().millisecondsSinceEpoch}',
       severity: 'success',
       title: 'Supabase File Upload',
-      description: 'Uploaded ${file.name} to bucket "ether-cinema/${file.folder}"',
+      description:
+          'Uploaded ${file.name} to bucket "ether-cinema/${file.folder}"',
       timestamp: 'Just now',
       createdAt: DateTime.now(),
     ));
@@ -379,13 +468,15 @@ class LiveBackendService extends ChangeNotifier {
     final results = <String>[];
 
     for (final m in _movies) {
-      if (m.title.toLowerCase().contains(clean) || m.category.toLowerCase().contains(clean)) {
+      if (m.title.toLowerCase().contains(clean) ||
+          m.category.toLowerCase().contains(clean)) {
         results.add('Movie: ${m.title} (${m.category})');
       }
     }
 
     for (final s in _series) {
-      if (s.title.toLowerCase().contains(clean) || s.genre.toLowerCase().contains(clean)) {
+      if (s.title.toLowerCase().contains(clean) ||
+          s.genre.toLowerCase().contains(clean)) {
         results.add('Series: ${s.title} (${s.genre})');
       }
     }
@@ -401,6 +492,7 @@ class LiveBackendService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _moviesSubscription?.cancel();
     _moviesController.close();
     _seriesController.close();
     _categoriesController.close();

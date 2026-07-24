@@ -6,11 +6,15 @@ import 'glass_container.dart';
 class ContinueWatchingCard extends StatelessWidget {
   final Movie movie;
   final VoidCallback onTap;
+  final double? progressRatio;
+  final String? remainingTimeText;
 
   const ContinueWatchingCard({
     super.key,
     required this.movie,
     required this.onTap,
+    this.progressRatio,
+    this.remainingTimeText,
   });
 
   @override
@@ -66,12 +70,16 @@ class ContinueWatchingCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          movie.title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        Expanded(
+                          child: Text(
+                            movie.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         if (movie.episodeInfo != null)
@@ -84,11 +92,18 @@ class ContinueWatchingCard extends StatelessWidget {
                           ),
                       ],
                     ),
+                    if (remainingTimeText != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        remainingTimeText!,
+                        style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: movie.watchProgress ?? 0.5,
+                        value: progressRatio ?? movie.watchProgress ?? 0.5,
                         backgroundColor: AppColors.surfaceContainerHigh,
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.primaryContainer,

@@ -20,7 +20,8 @@ class ApiClient {
     this.timeout = const Duration(seconds: 10),
   });
 
-  Future<T> executeWithRetry<T>(Future<T> Function() apiCall, {int retries = 3}) async {
+  Future<T> executeWithRetry<T>(Future<T> Function() apiCall,
+      {int retries = 3}) async {
     int attempt = 0;
     while (attempt < retries) {
       try {
@@ -28,7 +29,8 @@ class ApiClient {
       } catch (e) {
         attempt++;
         if (attempt >= retries) {
-          throw ApiNetworkException('Failed after $retries attempts: ${e.toString()}');
+          throw ApiNetworkException(
+              'Failed after $retries attempts: ${e.toString()}');
         }
         await Future.delayed(Duration(milliseconds: 500 * attempt));
       }
@@ -36,15 +38,10 @@ class ApiClient {
     throw ApiNetworkException('Unexpected network error');
   }
 
-  Future<Map<String, dynamic>> fetchDailymotionVideoMetadata(String videoId) async {
-    return executeWithRetry(() async {
-      // Simulate Dailymotion video metadata retrieval
-      return {
-        'id': videoId,
-        'title': 'Stream metadata for $videoId',
-        'provider': 'Dailymotion Adaptive Stream',
-        'status': 'ready',
-      };
-    });
+  Future<Map<String, dynamic>> fetchDailymotionVideoMetadata(
+      String videoId) async {
+    throw ApiNetworkException(
+      'No Dailymotion metadata endpoint is configured. Use the provider API from a server-side service.',
+    );
   }
 }

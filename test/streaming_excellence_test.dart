@@ -2,12 +2,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ether_cinema/core/services/movie_repository.dart';
 import 'package:ether_cinema/core/downloads/encrypted_download_manager.dart';
 import 'package:ether_cinema/core/diagnostics/app_diagnostics.dart';
+import 'package:ether_cinema/core/cms/cms_repository.dart';
 
 void main() {
   group('Streaming Excellence v8.0 Test Suite', () {
     final repository = MovieRepository();
 
     test('Catalog items should be available for adaptive streaming', () async {
+      CmsRepository().publishMovie(
+        CmsMovieItem(
+          id: 'se_m1',
+          title: 'Streaming Movie',
+          synopsis: 'Synopsis',
+          dailymotionVideoId: 'x8m00bc',
+          isPublished: true,
+          releaseDate: DateTime.now(),
+          genres: ['Sci-Fi'],
+        ),
+        'admin',
+      );
+
       final catalog = await repository.getTrending();
       expect(catalog.isNotEmpty, true);
       expect(catalog.first.dailymotionVideoId, 'x8m00bc');

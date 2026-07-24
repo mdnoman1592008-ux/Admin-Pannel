@@ -252,7 +252,7 @@ class _AnimatedSidebarState extends State<AnimatedSidebar>
                   children: [
                     Text('Super Admin',
                         style: AppTextStyles.h4().copyWith(fontSize: 12)),
-                    Text('admin@ethercinema.app',
+                    Text('Authenticated administrator',
                         style: AppTextStyles.bodySm().copyWith(fontSize: 10)),
                   ],
                 ),
@@ -401,5 +401,4 @@ class _NavItemState extends State<_NavItem>
     );
   }
 }
-
 

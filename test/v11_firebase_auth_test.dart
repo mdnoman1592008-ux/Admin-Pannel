@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ether_cinema/core/auth/auth_repository.dart';
+import 'package:ether_cinema/core/auth/role_guard.dart';
 
 void main() {
   group('Ether Cinema v11.0 Firebase Auth & RBAC Test Suite', () {
@@ -15,7 +16,7 @@ void main() {
     });
 
     test('Regular user sign in should assign user role and deny admin access', () async {
-      final regularUser = await authRepo.signInWithEmail('user@gmail.com', 'UserPass123!');
+      final regularUser = await authRepo.signInWithEmail('user@ethercinema.com', 'Pass123!');
       expect(regularUser.role, UserRole.user);
       expect(regularUser.isAdmin, false);
       expect(regularUser.isSuperAdmin, false);
@@ -23,9 +24,9 @@ void main() {
       expect(RoleGuard.canManageAdmins(regularUser), false);
     });
 
-    test('Anonymous Guest sign in should assign user role', () async {
-      final guestUser = await authRepo.signInAsGuest();
-      expect(guestUser.role, UserRole.user);
+    test('Anonymous guest authentication should assign guest credentials', () async {
+      final guestUser = await authRepo.signInAnonymously();
+      expect(guestUser.provider, 'anonymous');
       expect(guestUser.isAdmin, false);
       expect(RoleGuard.canAccessAdminPortal(guestUser), false);
     });
