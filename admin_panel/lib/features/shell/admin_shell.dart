@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/animated_sidebar.dart';
 import '../../core/widgets/top_bar.dart';
+import '../../core/responsive/responsive_layout.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../movies/movies_screen.dart';
 import '../series/series_screen.dart';
@@ -97,57 +98,66 @@ class _AdminShellState extends State<AdminShell>
   @override
   Widget build(BuildContext context) {
     final (title, subtitle) = _pageTitles[_selectedIndex];
+    final isCompact = MediaQuery.sizeOf(context).width <= Breakpoints.tabletMax;
+
+    final content = Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(isCompact ? 12 : 0, 12, 12, 0),
+          child: TopBar(pageTitle: title, pageSubtitle: subtitle),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(isCompact ? 12 : 0, 0, 12, 12),
+            child: FadeTransition(
+              opacity: _pageFade,
+              child: SlideTransition(
+                position: _pageSlide,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: _pages[_selectedIndex],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      drawer: isCompact
+          ? Drawer(
+              width: 280,
+              backgroundColor: Colors.transparent,
+              child: AnimatedSidebar(
+                selectedIndex: _selectedIndex,
+                onItemSelected: (index) {
+                  Navigator.of(context).pop();
+                  _selectPage(index);
+                },
+                isCollapsed: false,
+                onToggleCollapse: () {},
+              ),
+            )
+          : null,
       body: Container(
         decoration: const BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
-        child: Row(
-          children: [
-            // Floating glass sidebar
-            AnimatedSidebar(
-              selectedIndex: _selectedIndex,
-              onItemSelected: _selectPage,
-              isCollapsed: _sidebarCollapsed,
-              onToggleCollapse: () =>
-                  setState(() => _sidebarCollapsed = !_sidebarCollapsed),
-            ),
-            // Main content area
-            Expanded(
-              child: Column(
-                children: [
-                  // Top bar
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 12, 12, 0),
-                    child: TopBar(
-                      pageTitle: title,
-                      pageSubtitle: subtitle,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Page content
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 0, 12, 12),
-                      child: FadeTransition(
-                        opacity: _pageFade,
-                        child: SlideTransition(
-                          position: _pageSlide,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: _pages[_selectedIndex],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        child: isCompact
+            ? content
+            : Row(children: [
+                AnimatedSidebar(
+                  selectedIndex: _selectedIndex,
+                  onItemSelected: _selectPage,
+                  isCollapsed: _sidebarCollapsed,
+                  onToggleCollapse: () => setState(
+                      () => _sidebarCollapsed = !_sidebarCollapsed),
+                ),
+                Expanded(child: content),
+              ]),
       ),
     );
   }

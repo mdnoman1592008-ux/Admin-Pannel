@@ -46,6 +46,7 @@ class _TopBarState extends State<TopBar> {
       builder: (context, _) {
         final notifCount = _backend.notifications.length;
 
+        final compact = MediaQuery.sizeOf(context).width < 700;
         return ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
@@ -60,6 +61,13 @@ class _TopBarState extends State<TopBar> {
               ),
               child: Row(
                 children: [
+                  if (compact)
+                    IconButton(
+                      tooltip: 'Open navigation',
+                      icon: const Icon(Icons.menu_rounded,
+                          color: AppColors.primary),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
                   // Logo & Page title
                   Row(
                     children: [
@@ -79,7 +87,7 @@ class _TopBarState extends State<TopBar> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(widget.pageTitle, style: AppTextStyles.h3()),
-                          Text(widget.pageSubtitle,
+                          if (!compact) Text(widget.pageSubtitle,
                               style: AppTextStyles.bodySm().copyWith(fontSize: 11)),
                         ],
                       ),
@@ -93,10 +101,10 @@ class _TopBarState extends State<TopBar> {
                         color: AppColors.primary, size: 22),
                     onPressed: _openLiveSearchDialog,
                   ),
-                  const SizedBox(width: 12),
+                  if (!compact) const SizedBox(width: 12),
                   // System Health Indicator
-                  const _SystemHealthIndicator(),
-                  const SizedBox(width: 16),
+                  if (!compact) const _SystemHealthIndicator(),
+                  if (!compact) const SizedBox(width: 16),
                   // Live Notification Bell (🔔)
                   _NotificationButton(
                     count: notifCount,

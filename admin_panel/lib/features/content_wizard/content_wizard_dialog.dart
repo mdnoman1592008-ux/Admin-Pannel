@@ -33,6 +33,8 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
   String _contentType = 'movie';
   String _sourceProvider = 'youtube';
   bool _uploadingAsset = false;
+  bool _isSaving = false;
+  String? _validationMessage;
   bool _isTrending = false;
   bool _isTop10 = false;
   bool _isFeatured = false;
@@ -78,11 +80,32 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
   }
 
   void _onNextStep() {
+    final message = _validateCurrentStep();
+    if (message != null) {
+      setState(() => _validationMessage = message);
+      return;
+    }
     if (_currentStep < _totalSteps - 1) {
-      setState(() => _currentStep++);
+      setState(() {
+        _validationMessage = null;
+        _currentStep++;
+      });
     } else {
       _saveMovieToFirestore();
     }
+  }
+
+  String? _validateCurrentStep() {
+    if (_currentStep == 0 && _titleCtrl.text.trim().isEmpty) {
+      return 'Add a title before continuing.';
+    }
+    if (_currentStep == 1 && _categoryCtrl.text.trim().isEmpty) {
+      return 'Choose a category from your live category list.';
+    }
+    if (_currentStep == 3 && _videoIdCtrl.text.trim().isEmpty) {
+      return 'Add the video ID or stream URL.';
+    }
+    return null;
   }
 
   void _onPrevStep() {
@@ -94,9 +117,15 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
   Future<void> _saveMovieToFirestore() async {
     final title = _titleCtrl.text.trim();
     final category = _categoryCtrl.text.trim();
-    if (title.isEmpty || category.isEmpty || _videoIdCtrl.text.trim().isEmpty) return;
+    if (title.isEmpty || category.isEmpty || _videoIdCtrl.text.trim().isEmpty) {
+      setState(() => _validationMessage = 'Title, category, and source are required.');
+      return;
+    }
 
-    await LiveBackendService.instance.addMovie(LiveMovie(
+    setState(() => _isSaving = true);
+
+    try {
+      await LiveBackendService.instance.addMovie(LiveMovie(
       id: 'm_${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       category: category,
@@ -117,9 +146,13 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
       ],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-    ));
-
-    Navigator.pop(context);
+      ));
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      if (mounted) setState(() => _validationMessage = 'Could not save: $error');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   Future<void> _uploadAsset(bool isPoster) async {
@@ -145,10 +178,12 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+      insetPadding: const EdgeInsets.all(12),
       child: GlassCard(
-        width: 860,
-        height: 620,
+        width: MediaQuery.sizeOf(context).width < 920
+            ? MediaQuery.sizeOf(context).width - 24
+            : 920,
+        height: MediaQuery.sizeOf(context).height * 0.88,
         borderColor: AppColors.primary.withOpacity(0.3),
         child: Column(
           children: [
@@ -156,6 +191,14 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
             const SizedBox(height: 16),
             _buildStepIndicator(),
             const SizedBox(height: 20),
+            if (_validationMessage != null)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppColors.danger.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                child: Text(_validationMessage!, style: AppTextStyles.bodySm().copyWith(color: AppColors.danger)),
+              ),
             Expanded(child: _buildStepBody()),
             const SizedBox(height: 16),
             _buildWizardFooter(),
@@ -206,7 +249,9 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
       'Publish',
     ];
 
-    return Row(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
       children: List.generate(_totalSteps, (i) {
         final isActive = i == _currentStep;
         final isCompleted = i < _currentStep;
@@ -216,7 +261,8 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
                 ? AppColors.success
                 : AppColors.textMuted;
 
-        return Expanded(
+        return SizedBox(
+          width: 104,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -248,7 +294,7 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           ),
         );
       }),
-    );
+    ));
   }
 
   Widget _buildStepBody() {
@@ -408,13 +454,15 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Step 3: Media Assets & Live Preview',
+          Text('Step 3: Media Assets',
               style: AppTextStyles.h3()),
           const SizedBox(height: 16),
           TextField(controller: _posterCtrl, decoration: InputDecoration(labelText: 'Poster image URL (2:3)', suffixIcon: IconButton(icon: const Icon(Icons.upload), onPressed: _uploadingAsset ? null : () => _uploadAsset(true)))),
           const SizedBox(height: 16),
           TextField(controller: _bannerCtrl, decoration: InputDecoration(labelText: 'Banner / backdrop URL (16:9)', suffixIcon: IconButton(icon: const Icon(Icons.upload), onPressed: _uploadingAsset ? null : () => _uploadAsset(false)))),
           const SizedBox(height: 24),
+          if (_uploadingAsset) const Padding(padding: EdgeInsets.only(top: 14), child: LinearProgressIndicator()),
+          const SizedBox(height: 14),
           Text('Live Asset Preview Card', style: AppTextStyles.h4()),
           const SizedBox(height: 12),
           Container(
@@ -591,15 +639,16 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           ),
         const Spacer(),
         GlowButton(
-          label: _currentStep == _totalSteps - 1
-              ? 'Publish to Firestore'
+          label: _isSaving ? 'Publishing...' : _currentStep == _totalSteps - 1
+              ? (_publishStatus == 'Published' ? 'Publish live' : 'Save content')
               : 'Continue Step',
           icon: _currentStep == _totalSteps - 1
               ? Icons.cloud_upload_rounded
               : Icons.arrow_forward_rounded,
           color: AppColors.primary,
           isSmall: true,
-          onPressed: _onNextStep,
+          isLoading: _isSaving,
+          onPressed: _isSaving ? null : _onNextStep,
         ),
       ],
     );

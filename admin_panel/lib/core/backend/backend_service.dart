@@ -448,6 +448,22 @@ class LiveBackendService extends ChangeNotifier {
     await _writeAudit('Category Created', 'Category "${cat.name}" was created.');
   }
 
+  Future<void> updateCategory(LiveCategory category) async {
+    await _firestore.collection('categories').doc(category.id).set({
+      'name': category.name,
+      'iconName': category.iconName,
+      'colorHex': category.colorHex,
+      'movieCount': category.movieCount,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    await _writeAudit('Category Updated', 'Category "${category.name}" was updated.');
+  }
+
+  Future<void> deleteCategory(String categoryId) async {
+    await _firestore.collection('categories').doc(categoryId).delete();
+    await _writeAudit('Category Deleted', 'Category "$categoryId" was deleted.');
+  }
+
   /// Record audit log event
   Future<void> _writeAudit(String title, String description) async {
     await _firestore.collection('audit_logs').add({
