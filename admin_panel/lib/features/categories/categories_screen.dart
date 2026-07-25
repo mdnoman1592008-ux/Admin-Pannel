@@ -157,19 +157,53 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceHigh,
         title: Text(category == null ? 'Create category' : 'Edit category', style: AppTextStyles.h3()),
-        content: StatefulBuilder(builder: (context, setDialogState) => SizedBox(width: 420, child: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Category name', hintText: 'Action, Drama, Anime')),
-          const SizedBox(height: 14),
-          DropdownButtonFormField<String>(value: iconName, decoration: const InputDecoration(labelText: 'Icon'), items: const [
-            DropdownMenuItem(value: 'category', child: Text('Category')),
-            DropdownMenuItem(value: 'movie', child: Text('Movie')),
-            DropdownMenuItem(value: 'tv', child: Text('TV / Series')),
-            DropdownMenuItem(value: 'anime', child: Text('Anime')),
-            DropdownMenuItem(value: 'kids', child: Text('Kids')),
-          ], onChanged: (value) => setDialogState(() => iconName = value ?? 'category')),
-          const SizedBox(height: 14),
-          Wrap(spacing: 8, children: ['#00D8FF', '#7B61FF', '#00FFC8', '#FFD86A', '#FF5D8F'].map((hex) => ChoiceChip(label: Text(hex), selected: colorHex == hex, onSelected: (_) => setDialogState(() => colorHex = hex))).toList()),
-        ])),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) => SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Category name',
+                    hintText: 'Action, Drama, Anime',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  value: iconName,
+                  decoration: const InputDecoration(labelText: 'Icon'),
+                  items: const [
+                    DropdownMenuItem(value: 'category', child: Text('Category')),
+                    DropdownMenuItem(value: 'movie', child: Text('Movie')),
+                    DropdownMenuItem(value: 'tv', child: Text('TV / Series')),
+                    DropdownMenuItem(value: 'anime', child: Text('Anime')),
+                    DropdownMenuItem(value: 'kids', child: Text('Kids')),
+                  ],
+                  onChanged: (value) => setDialogState(
+                    () => iconName = value ?? 'category',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  children: ['#00D8FF', '#7B61FF', '#00FFC8', '#FFD86A', '#FF5D8F']
+                      .map(
+                        (hex) => ChoiceChip(
+                          label: Text(hex),
+                          selected: colorHex == hex,
+                          onSelected: (_) => setDialogState(
+                            () => colorHex = hex,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
