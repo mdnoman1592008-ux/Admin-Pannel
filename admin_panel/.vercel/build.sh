@@ -10,4 +10,4 @@ fi
 
 flutter/bin/flutter config --enable-web
 flutter/bin/flutter pub get
-flutter/bin/flutter build web --release --no-pub
+flutter/bin/flutter build web --release --no-pub --verbose

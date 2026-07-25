@@ -209,7 +209,8 @@ class _HomeSectionsScreenState extends State<HomeSectionsScreen> {
                                   Switch(
                                     value: sec.isEnabled,
                                     activeThumbColor: const Color(0xFF6C5CE7),
-                                    activeTrackColor: const Color(0xFF6C5CE7).withValues(alpha: 0.3),
+                                    activeTrackColor:
+                                        const Color(0xFF6C5CE7).withOpacity(0.3),
                                     onChanged: (val) {
                                       _repository.toggleSectionEnabled(sec.id, val);
                                     },

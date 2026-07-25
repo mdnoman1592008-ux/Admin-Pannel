@@ -66,7 +66,7 @@ class _TopBarState extends State<TopBar> {
                       tooltip: 'Open navigation',
                       icon: const Icon(Icons.menu_rounded,
                           color: AppColors.primary),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
+                      onPressed: () => Scaffold.maybeOf(context)?.openDrawer(),
                     ),
                   // Logo & Page title
                   Row(

@@ -54,7 +54,9 @@ class LiveMovie {
       synopsis: data['synopsis'] as String? ?? '',
       contentType: data['contentType'] as String? ?? 'movie',
       sourceProvider: data['sourceProvider'] as String? ?? '',
-      sourceUrl: data['sourceUrl'] as String? ?? data['dailymotionVideoId'] as String? ?? '',
+      sourceUrl: (data['sourceUrl'] as String?) ??
+          (data['dailymotionVideoId'] as String?) ??
+          '',
       playlistIds: List<String>.from(data['playlistIds'] ?? const []),
       createdAt: _asDateTime(data['createdAt']),
       updatedAt: _asDateTime(data['updatedAt']),
