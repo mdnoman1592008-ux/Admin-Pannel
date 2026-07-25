@@ -32,6 +32,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _selectedCategory = 'ALL';
 
+  /// Firestore streams normally update immediately. This gesture also forces
+  /// a server read for users returning from a backgrounded/offline session.
+  Future<void> _refreshCatalog() async {
+    await Future.wait([
+      FirebaseFirestore.instance
+          .collection('movies')
+          .where('isPublished', isEqualTo: true)
+          .get(const GetOptions(source: Source.server)),
+      FirebaseFirestore.instance
+          .collection('home_sections')
+          .get(const GetOptions(source: Source.server)),
+    ]);
+    if (mounted) setState(() {});
+  }
+
   void _openNotificationsModal() async {
     final granted =
         await PermissionService().requestNotificationPermission(context);
@@ -501,6 +516,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           .toList();
                     }
 
+                    // A catalog must remain usable even before an editor has
+                    // created custom home rails in the admin panel.
+                    if (activeSections.isEmpty && allCatalogMovies.isNotEmpty) {
+                      final now = DateTime.now();
+                      activeSections.add(HomeSectionModel(
+                        id: 'live-catalog',
+                        title: 'Latest releases',
+                        slug: 'latest-releases',
+                        layoutType: SectionLayoutType.horizontalCarousel,
+                        contentSource: SectionContentSource.recentlyAdded,
+                        displayOrder: 1,
+                        createdAt: now,
+                        updatedAt: now,
+                      ));
+                    }
+
                     final bool hasHeroBanner = activeSections.isNotEmpty &&
                         activeSections.first.layoutType ==
                             SectionLayoutType.heroBanner;
@@ -511,8 +542,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? activeSections.sublist(1)
                         : activeSections;
 
-                    return CustomScrollView(
-                      slivers: [
+                    return RefreshIndicator(
+                      color: const Color(0xFF00CFFF),
+                      backgroundColor: const Color(0xFF141927),
+                      onRefresh: _refreshCatalog,
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
                         // App Bar / Top Navigation
                         SliverAppBar(
                           backgroundColor: Colors.transparent,
@@ -568,7 +604,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.white, size: 24),
                               onPressed: () {
                                 Navigator.of(context).push(
-                                  context,
                                   PageRouteBuilder(
                                     pageBuilder: (context, animation,
                                             secondaryAnimation) =>
@@ -731,7 +766,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
 
                         const SliverToBoxAdapter(child: SizedBox(height: 40)),
-                      ],
+                        ],
+                      ),
                     );
                   },
                 );

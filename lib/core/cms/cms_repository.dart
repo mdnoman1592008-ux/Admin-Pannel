@@ -65,7 +65,7 @@ class CmsMovieItem {
       isPublished: map['isPublished'] as bool? ?? false,
       releaseDate: parsedDate,
       genres: List<String>.from(map['genres'] ?? []),
-      isSeries: map['isSeries'] as bool? ?? false,
+      isSeries: map['isSeries'] as bool? ?? map['contentType'] == 'series',
       position: map['position'] as int? ?? 1,
       episodes: (map['episodes'] as List<dynamic>? ?? []).map((e) {
         return Episode.fromMap(e as Map<String, dynamic>,
