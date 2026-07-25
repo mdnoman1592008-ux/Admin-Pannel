@@ -230,8 +230,7 @@ class AuthRepository {
     }
   }
 
-  Future<UserDocument> signInWithEmail(String email, String password,
-      {String? mockEmail, String? mockDisplayName}) async {
+  Future<UserDocument> signInWithEmail(String email, String password) async {
     try {
       final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email.trim(),

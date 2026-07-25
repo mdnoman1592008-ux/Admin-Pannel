@@ -5,6 +5,7 @@ import '../models/banner_item.dart';
 import '../models/category_item.dart';
 import '../../models/movie.dart';
 import '../../models/episode.dart';
+import '../../models/streaming_source.dart';
 
 enum ExtendedUserRole {
   user,
@@ -26,6 +27,8 @@ class CmsMovieItem {
   final List<Episode> episodes;
   final String posterUrl;
   final String bannerUrl;
+  final String sourceProvider;
+  final String sourceUrl;
 
   const CmsMovieItem({
     required this.id,
@@ -40,6 +43,8 @@ class CmsMovieItem {
     this.episodes = const [],
     this.posterUrl = '',
     this.bannerUrl = '',
+    this.sourceProvider = '',
+    this.sourceUrl = '',
   });
 
   factory CmsMovieItem.fromMap(String docId, Map<String, dynamic> map) {
@@ -68,6 +73,8 @@ class CmsMovieItem {
       }).toList(),
       posterUrl: map['posterUrl'] as String? ?? '',
       bannerUrl: map['bannerUrl'] as String? ?? '',
+      sourceProvider: map['sourceProvider'] as String? ?? '',
+      sourceUrl: map['sourceUrl'] as String? ?? map['dailymotionVideoId'] as String? ?? '',
     );
   }
 
@@ -85,16 +92,14 @@ class CmsMovieItem {
       episodes: episodes,
       posterUrl: posterUrl,
       bannerUrl: bannerUrl,
+      sourceProvider: sourceProvider,
+      sourceUrl: sourceUrl,
     );
   }
 }
 
 class CmsAuditLogger {
-  static final List<String> _logs = [
-    '[08:00:12] Initialized Firebase Enterprise CMS Realtime Engine',
-    '[07:58:45] Security Rules active: Firestore RBAC 4-tier enforcement',
-    '[07:55:00] Super Admin admin@ethercinema.com authorized',
-  ];
+  static final List<String> _logs = [];
 
   static List<String> get logs => List.unmodifiable(_logs);
 

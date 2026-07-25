@@ -57,7 +57,7 @@ class _StorageScreenState extends State<StorageScreen> {
         );
       }
 
-      _backend.recordStorageUpload(LiveStorageFile(
+      await _backend.recordStorageUpload(LiveStorageFile(
         name: file.name,
         path: url,
         sizeBytes: bytes.length,

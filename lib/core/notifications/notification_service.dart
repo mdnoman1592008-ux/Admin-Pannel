@@ -110,6 +110,14 @@ class NotificationService {
     // For global notifications, local read state can be maintained via SharedPrefs or just in memory.
   }
 
+  static void markAsRead(String notificationId) {
+    final index = _notifications.indexWhere((notification) => notification.id == notificationId);
+    if (index < 0 || _notifications[index].isRead) return;
+    final item = _notifications[index];
+    item.isRead = true;
+    _notificationsController.add(List.unmodifiable(_notifications));
+  }
+
   static bool isSubscribedToNotifyMe(String contentId) {
     return _notifyMeSubscriptions.contains(contentId);
   }
@@ -128,7 +136,7 @@ class NotificationService {
     }
   }
 
-  // Used strictly by admin features or mock triggers
+  // Used by trusted admin workflows; delivery is handled server-side.
   static Future<void> addNotification(String title, String message, {String? targetId}) async {
     await FirebaseFirestore.instance.collection('notifications').add({
       'title': title,

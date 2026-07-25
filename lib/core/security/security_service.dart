@@ -5,6 +5,8 @@ import 'network_security_guard.dart';
 import 'signed_playback_token_engine.dart';
 
 class SecurityService {
+  static const _supabaseCertificateFingerprint =
+      String.fromEnvironment('SUPABASE_CERT_SHA256');
   static bool validateDailymotionVideoId(String videoId) {
     if (videoId.isEmpty) return false;
     final regex = RegExp(r'^[a-zA-Z0-9]+$');
@@ -18,10 +20,13 @@ class SecurityService {
 
   static bool performSecurityAudit() {
     final integrity = AppIntegrityGuard.verifyAppIntegrity();
-    final certValid = NetworkSecurityGuard.validateCertificatePinning(
-      domain: 'ozqfltgvxlgpvytjofis.supabase.co',
-      certificateFingerprint: 'sha256_mock_pin',
-    );
+    // A release build must inject the real pin with
+    // --dart-define=SUPABASE_CERT_SHA256=<sha256-pin>.
+    final certValid = _supabaseCertificateFingerprint.isNotEmpty &&
+        NetworkSecurityGuard.validateCertificatePinning(
+          domain: 'ozqfltgvxlgpvytjofis.supabase.co',
+          certificateFingerprint: _supabaseCertificateFingerprint,
+        );
 
     final auditPassed = integrity.isSecure && certValid;
     if (auditPassed) {

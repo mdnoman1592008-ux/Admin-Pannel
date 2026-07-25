@@ -13,6 +13,11 @@ class LiveMovie {
   final bool isPublished;
   final bool isFeatured;
   final String year;
+  final String synopsis;
+  final String contentType;
+  final String sourceProvider;
+  final String sourceUrl;
+  final List<String> playlistIds;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -26,6 +31,11 @@ class LiveMovie {
     required this.isPublished,
     required this.isFeatured,
     required this.year,
+    this.synopsis = '',
+    this.contentType = 'movie',
+    this.sourceProvider = '',
+    this.sourceUrl = '',
+    this.playlistIds = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -41,6 +51,11 @@ class LiveMovie {
       isPublished: data['isPublished'] as bool? ?? false,
       isFeatured: data['isFeatured'] as bool? ?? false,
       year: data['year'] as String? ?? '2024',
+      synopsis: data['synopsis'] as String? ?? '',
+      contentType: data['contentType'] as String? ?? 'movie',
+      sourceProvider: data['sourceProvider'] as String? ?? '',
+      sourceUrl: data['sourceUrl'] as String? ?? data['dailymotionVideoId'] as String? ?? '',
+      playlistIds: List<String>.from(data['playlistIds'] ?? const []),
       createdAt: _asDateTime(data['createdAt']),
       updatedAt: _asDateTime(data['updatedAt']),
     );
@@ -50,8 +65,12 @@ class LiveMovie {
         'title': title,
         'category': category,
         'genres': [category],
-        'synopsis': '',
-        'dailymotionVideoId': '',
+        'dailymotionVideoId': sourceProvider == 'dailymotion' ? sourceUrl : '',
+        'sourceProvider': sourceProvider,
+        'sourceUrl': sourceUrl,
+        'contentType': contentType,
+        'playlistIds': playlistIds,
+        'synopsis': synopsis,
         'posterUrl': posterUrl,
         'bannerUrl': bannerUrl,
         'views': views,
@@ -74,6 +93,11 @@ class LiveMovie {
         isPublished: isPublished ?? this.isPublished,
         isFeatured: isFeatured ?? this.isFeatured,
         year: year,
+        synopsis: synopsis,
+        contentType: contentType,
+        sourceProvider: sourceProvider,
+        sourceUrl: sourceUrl,
+        playlistIds: playlistIds,
         createdAt: createdAt,
         updatedAt: DateTime.now(),
       );
@@ -121,9 +145,7 @@ class LiveSeries {
       isFeatured: data['isFeatured'] as bool? ?? false,
       views: (data['views'] as num?)?.toInt() ?? 0,
       posterUrl: data['posterUrl'] as String? ?? '',
-      createdAt: data['createdAt'] != null
-          ? DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt: _asDateTime(data['createdAt']),
     );
   }
 }
@@ -180,9 +202,7 @@ class LiveAuditLog {
       title: data['title'] as String? ?? 'System Event',
       description: data['description'] as String? ?? '',
       timestamp: data['timestamp'] as String? ?? 'Just now',
-      createdAt: data['createdAt'] != null
-          ? DateTime.tryParse(data['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt: _asDateTime(data['createdAt']),
     );
   }
 }
@@ -213,9 +233,7 @@ class LiveNotification {
       body: data['body'] as String? ?? '',
       target: data['target'] as String? ?? 'all',
       recipientCount: (data['recipientCount'] as num?)?.toInt() ?? 0,
-      sentAt: data['sentAt'] != null
-          ? DateTime.tryParse(data['sentAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      sentAt: _asDateTime(data['sentAt']),
     );
   }
 }
@@ -270,10 +288,12 @@ class LiveBackendService extends ChangeNotifier {
   LiveBackendService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _moviesSubscription;
+  final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>
+      _subscriptions = [];
   bool _started = false;
 
-  // In-memory live Firestore collections (emulating realtime Firestore streams)
+  // Local projections of Firestore's realtime collections. Firestore is the
+  // source of truth; these lists are never used as a persistence layer.
   final List<LiveMovie> _movies = [];
   final List<LiveSeries> _series = [];
   final List<LiveCategory> _categories = [];
@@ -316,14 +336,11 @@ class LiveBackendService extends ChangeNotifier {
   List<LiveConfigKey> get remoteConfig => List.unmodifiable(_remoteConfig);
   List<LiveStorageFile> get storageFiles => List.unmodifiable(_storageFiles);
 
-  /// Starts a single Firestore listener for the catalog. The in-memory list is
-  /// updated from document changes, so the dashboard does not poll or rebuild
-  /// the consumer app for unrelated admin activity.
+  /// Starts realtime listeners for every admin collection.
   Future<void> start() async {
     if (_started) return;
     _started = true;
-    _moviesSubscription =
-        _firestore.collection('movies').snapshots().listen((snapshot) {
+    _subscriptions.add(_firestore.collection('movies').snapshots().listen((snapshot) {
       _movies
         ..clear()
         ..addAll(snapshot.docs
@@ -333,7 +350,59 @@ class LiveBackendService extends ChangeNotifier {
       notifyListeners();
     }, onError: (Object error, StackTrace stackTrace) {
       debugPrint('[LiveBackendService] movies listener failed: $error');
-    });
+    }));
+    _subscriptions.add(_firestore.collection('series').snapshots().listen((snapshot) {
+      _series
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => LiveSeries.fromFirestore(doc.data(), doc.id)));
+      _series.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _seriesController.add(List.unmodifiable(_series));
+      notifyListeners();
+    }, onError: (Object error, StackTrace stackTrace) => debugPrint('[LiveBackendService] series listener failed: $error')));
+    _subscriptions.add(_firestore.collection('categories').snapshots().listen((snapshot) {
+      _categories
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => LiveCategory.fromFirestore(doc.data(), doc.id)));
+      _categoriesController.add(List.unmodifiable(_categories));
+      notifyListeners();
+    }, onError: (Object error, StackTrace stackTrace) => debugPrint('[LiveBackendService] categories listener failed: $error')));
+    _subscriptions.add(_firestore.collection('audit_logs').snapshots().listen((snapshot) {
+      _auditLogs
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => LiveAuditLog.fromFirestore(doc.data(), doc.id)));
+      _auditLogs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _auditLogsController.add(List.unmodifiable(_auditLogs));
+      notifyListeners();
+    }, onError: (Object error, StackTrace stackTrace) => debugPrint('[LiveBackendService] audit listener failed: $error')));
+    _subscriptions.add(_firestore.collection('notifications').snapshots().listen((snapshot) {
+      _notifications
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => LiveNotification.fromFirestore(doc.data(), doc.id)));
+      _notifications.sort((a, b) => b.sentAt.compareTo(a.sentAt));
+      _notificationsController.add(List.unmodifiable(_notifications));
+      notifyListeners();
+    }, onError: (Object error, StackTrace stackTrace) => debugPrint('[LiveBackendService] notifications listener failed: $error')));
+    _subscriptions.add(_firestore.collection('remote_config').snapshots().listen((snapshot) {
+      _remoteConfig
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => LiveConfigKey.fromFirestore(doc.data(), doc.id)));
+      _remoteConfigController.add(List.unmodifiable(_remoteConfig));
+      notifyListeners();
+    }, onError: (Object error, StackTrace stackTrace) => debugPrint('[LiveBackendService] remote config listener failed: $error')));
+    _subscriptions.add(_firestore.collection('storage_files').snapshots().listen((snapshot) {
+      _storageFiles
+        ..clear()
+        ..addAll(snapshot.docs.map((doc) => LiveStorageFile(
+          name: doc.data()['name'] as String? ?? doc.id,
+          path: doc.data()['path'] as String? ?? '',
+          sizeBytes: (doc.data()['sizeBytes'] as num?)?.toInt() ?? 0,
+          folder: doc.data()['folder'] as String? ?? '',
+          uploadedAt: _asDateTime(doc.data()['uploadedAt']),
+        )));
+      _storageFiles.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+      _storageFilesController.add(List.unmodifiable(_storageFiles));
+      notifyListeners();
+    }, onError: (Object error, StackTrace stackTrace) => debugPrint('[LiveBackendService] storage listener failed: $error')));
   }
 
   /// Add new movie to live Firestore collection
@@ -361,43 +430,25 @@ class LiveBackendService extends ChangeNotifier {
 
   /// Add new series to live Firestore collection
   Future<void> addSeries(LiveSeries s) async {
-    _series.insert(0, s);
-    _seriesController.add(_series);
-    addAuditLog(LiveAuditLog(
-      id: 'log_${DateTime.now().millisecondsSinceEpoch}',
-      severity: 'success',
-      title: 'Series Created',
-      description:
-          'TV Series "${s.title}" added to Firestore collection "series"',
-      timestamp: 'Just now',
-      createdAt: DateTime.now(),
-    ));
-    notifyListeners();
+    await _firestore.collection('series').doc(s.id).set({
+      'title': s.title, 'genre': s.genre, 'seasons': s.seasons,
+      'episodes': s.episodes, 'status': s.status, 'isFeatured': s.isFeatured,
+      'views': s.views, 'posterUrl': s.posterUrl,
+      'createdAt': FieldValue.serverTimestamp(), 'updatedAt': FieldValue.serverTimestamp(),
+    });
+    await _writeAudit('Series Created', 'TV Series "${s.title}" was created.');
   }
 
   /// Add new category to live Firestore collection
   Future<void> addCategory(LiveCategory cat) async {
-    _categories.add(cat);
-    _categoriesController.add(_categories);
-    addAuditLog(LiveAuditLog(
-      id: 'log_${DateTime.now().millisecondsSinceEpoch}',
-      severity: 'info',
-      title: 'Category Created',
-      description:
-          'Category "${cat.name}" added to Firestore collection "categories"',
-      timestamp: 'Just now',
-      createdAt: DateTime.now(),
-    ));
-    notifyListeners();
+    await _firestore.collection('categories').doc(cat.id).set({
+      'name': cat.name, 'iconName': cat.iconName, 'colorHex': cat.colorHex,
+      'movieCount': cat.movieCount, 'updatedAt': FieldValue.serverTimestamp(),
+    });
+    await _writeAudit('Category Created', 'Category "${cat.name}" was created.');
   }
 
   /// Record audit log event
-  void addAuditLog(LiveAuditLog log) {
-    _auditLogs.insert(0, log);
-    _auditLogsController.add(_auditLogs);
-    notifyListeners();
-  }
-
   Future<void> _writeAudit(String title, String description) async {
     await _firestore.collection('audit_logs').add({
       'severity': 'info',
@@ -408,56 +459,33 @@ class LiveBackendService extends ChangeNotifier {
     });
   }
 
-  /// Send FCM Push Notification
+  /// Queues a notification request. A trusted Cloud Function must deliver it
+  /// and update its delivery status; the browser never sends FCM directly.
   Future<void> sendNotification(LiveNotification notif) async {
-    _notifications.insert(0, notif);
-    _notificationsController.add(_notifications);
-    addAuditLog(LiveAuditLog(
-      id: 'log_${DateTime.now().millisecondsSinceEpoch}',
-      severity: 'info',
-      title: 'Notification Sent',
-      description:
-          'FCM Push "${notif.title}" delivered to ${notif.recipientCount} subscribers',
-      timestamp: 'Just now',
-      createdAt: DateTime.now(),
-    ));
-    notifyListeners();
+    await _firestore.collection('notifications').doc(notif.id).set({
+      'title': notif.title, 'body': notif.body, 'target': notif.target,
+      'recipientCount': 0, 'status': 'queued',
+      'sentAt': FieldValue.serverTimestamp(),
+    });
+    await _writeAudit('Notification Queued', 'Push "${notif.title}" was queued for server delivery.');
   }
 
   /// Update Remote Config Key
   Future<void> setConfigKey(LiveConfigKey cfg) async {
-    final idx = _remoteConfig.indexWhere((c) => c.key == cfg.key);
-    if (idx >= 0) {
-      _remoteConfig[idx] = cfg;
-    } else {
-      _remoteConfig.add(cfg);
-    }
-    _remoteConfigController.add(_remoteConfig);
-    addAuditLog(LiveAuditLog(
-      id: 'log_${DateTime.now().millisecondsSinceEpoch}',
-      severity: 'warning',
-      title: 'Remote Config Updated',
-      description: 'Key "${cfg.key}" set to "${cfg.value}"',
-      timestamp: 'Just now',
-      createdAt: DateTime.now(),
-    ));
-    notifyListeners();
+    await _firestore.collection('remote_config').doc(cfg.key).set({
+      'value': cfg.value, 'type': cfg.type, 'description': cfg.description,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    await _writeAudit('Remote Config Updated', 'Key "${cfg.key}" was updated.');
   }
 
   /// Record uploaded file to Supabase Storage
-  void recordStorageUpload(LiveStorageFile file) {
-    _storageFiles.insert(0, file);
-    _storageFilesController.add(_storageFiles);
-    addAuditLog(LiveAuditLog(
-      id: 'log_${DateTime.now().millisecondsSinceEpoch}',
-      severity: 'success',
-      title: 'Supabase File Upload',
-      description:
-          'Uploaded ${file.name} to bucket "ether-cinema/${file.folder}"',
-      timestamp: 'Just now',
-      createdAt: DateTime.now(),
-    ));
-    notifyListeners();
+  Future<void> recordStorageUpload(LiveStorageFile file) async {
+    await _firestore.collection('storage_files').add({
+      'name': file.name, 'path': file.path, 'sizeBytes': file.sizeBytes,
+      'folder': file.folder, 'uploadedAt': FieldValue.serverTimestamp(),
+    });
+    await _writeAudit('Media Uploaded', 'Uploaded ${file.name} to ${file.folder}.');
   }
 
   /// Global Search across all entity collections
@@ -492,7 +520,9 @@ class LiveBackendService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _moviesSubscription?.cancel();
+    for (final subscription in _subscriptions) {
+      subscription.cancel();
+    }
     _moviesController.close();
     _seriesController.close();
     _categoriesController.close();

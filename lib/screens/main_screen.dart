@@ -4,7 +4,6 @@ import '../models/movie.dart';
 import '../theme/app_colors.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import 'home_screen.dart';
-import 'search_screen.dart';
 import 'categories_screen.dart';
 import 'downloads_screen.dart';
 import 'settings_screen.dart';
@@ -118,7 +117,6 @@ class _MainScreenState extends State<MainScreen> {
                     index: _currentIndex,
                     children: [
                       HomeScreen(onSelectMovie: _onSelectMovie),
-                      SearchScreen(onSelectMovie: _onSelectMovie),
                       const CategoriesScreen(),
                       const DownloadsScreen(),
                       const SettingsScreen(),

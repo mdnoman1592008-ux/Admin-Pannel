@@ -82,5 +82,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isSuperAdmin();
     }
+
+    // File metadata only. Objects themselves remain protected by Supabase RLS.
+    match /storage_files/{fileId} {
+      allow read: if isEditor();
+      allow create: if isEditor();
+      allow update, delete: if isAdmin();
+    }
   }
 }

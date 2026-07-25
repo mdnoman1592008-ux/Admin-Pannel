@@ -8,7 +8,9 @@ import '../../core/cms/cms_repository.dart';
 import '../../core/cms/home_section_repository.dart';
 import '../../core/notifications/notification_service.dart';
 import '../../core/services/permission_service.dart';
+import '../../models/streaming_source.dart';
 import '../search/search_screen.dart';
+import '../notifications/notifications_screen.dart';
 import 'renderers/section_renderer.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -165,6 +167,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openNotificationsPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const NotificationsScreen()),
+    );
+  }
+
   Movie _cmsItemToMovie(CmsMovieItem item) {
     return Movie(
       id: item.id,
@@ -179,12 +187,26 @@ class _HomeScreenState extends State<HomeScreen> {
           : item.posterUrl,
       backdropUrl: item.bannerUrl,
       dailymotionVideoId: item.dailymotionVideoId,
+      streamingSources: _streamingSources(item),
       duration:
           item.episodes.isNotEmpty ? item.episodes.first.duration : '2h 15m',
       releaseYear: item.releaseDate.year.toString(),
       isSeries: item.isSeries,
       episodes: item.episodes,
     );
+  }
+
+  List<StreamingSource> _streamingSources(CmsMovieItem item) {
+    final provider = switch (item.sourceProvider) {
+      'youtube' => StreamingProvider.youtube,
+      'dailymotion' => StreamingProvider.dailymotion,
+      'hls' => StreamingProvider.hls,
+      'dash' => StreamingProvider.dash,
+      'mp4' => StreamingProvider.mp4,
+      _ => StreamingProvider.dailymotion,
+    };
+    final source = item.sourceUrl.isNotEmpty ? item.sourceUrl : item.dailymotionVideoId;
+    return source.isEmpty ? const [] : [StreamingSource(id: '${item.id}_primary', provider: provider, urlOrId: source, priority: 1)];
   }
 
   List<Movie> _getMoviesForSection(
@@ -545,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: const Icon(Icons.search_rounded,
                                   color: Colors.white, size: 24),
                               onPressed: () {
-                                Navigator.push(
+                                Navigator.of(context).push(
                                   context,
                                   PageRouteBuilder(
                                     pageBuilder: (context, animation,
@@ -555,8 +577,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     transitionsBuilder: (context, animation,
                                         secondaryAnimation, child) {
+                                      final curved = CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeOutCubic,
+                                      );
                                       return FadeTransition(
-                                          opacity: animation, child: child);
+                                        opacity: curved,
+                                        child: SlideTransition(
+                                          position: Tween<Offset>(
+                                            begin: const Offset(0, .06),
+                                            end: Offset.zero,
+                                          ).animate(curved),
+                                          child: child,
+                                        ),
+                                      );
                                     },
                                   ),
                                 );
@@ -575,7 +609,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             Icons.notifications_outlined,
                                             color: Colors.white,
                                             size: 24),
-                                        onPressed: _openNotificationsModal,
+                                        onPressed: _openNotificationsPage,
                                         tooltip: 'Notifications',
                                       ),
                                       if (unreadCount > 0)

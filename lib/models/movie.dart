@@ -40,7 +40,7 @@ class Movie {
     required this.backdropUrl,
     required this.duration,
     required this.releaseYear,
-    this.dailymotionVideoId = 'x8m00bc',
+    this.dailymotionVideoId = '',
     this.isSeries = false,
     this.isAnime = false,
     this.isNewRelease = false,
@@ -53,31 +53,6 @@ class Movie {
     this.cast = const [],
     this.episodes = const [],
     this.seasons = const [],
-    this.streamingSources = const [
-      StreamingSource(
-        id: 'src1',
-        provider: StreamingProvider.dailymotion,
-        urlOrId: 'x8m00bc',
-        priority: 1,
-      ),
-      StreamingSource(
-        id: 'src2',
-        provider: StreamingProvider.youtube,
-        urlOrId: 'dQw4w9WgXcQ',
-        priority: 2,
-      ),
-      StreamingSource(
-        id: 'src3',
-        provider: StreamingProvider.hls,
-        urlOrId: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-        priority: 3,
-      ),
-      StreamingSource(
-        id: 'src4',
-        provider: StreamingProvider.mp4,
-        urlOrId: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        priority: 4,
-      ),
-    ],
+    this.streamingSources = const [],
   });
 }

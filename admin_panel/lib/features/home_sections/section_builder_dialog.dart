@@ -295,7 +295,7 @@ class _SectionBuilderDialogState extends State<SectionBuilderDialog> with Single
             const SizedBox(height: 16),
             // Footer Buttons
             Row(
-              mainAxisAlignment: MainEndAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),

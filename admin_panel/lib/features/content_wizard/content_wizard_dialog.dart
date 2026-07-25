@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../core/admin_storage_service.dart';
 import '../../core/backend/backend_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -27,6 +30,9 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
 
   // Step 2: Categories
   final _categoryCtrl = TextEditingController();
+  String _contentType = 'movie';
+  String _sourceProvider = 'youtube';
+  bool _uploadingAsset = false;
   bool _isTrending = false;
   bool _isTop10 = false;
   bool _isFeatured = false;
@@ -88,7 +94,7 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
   Future<void> _saveMovieToFirestore() async {
     final title = _titleCtrl.text.trim();
     final category = _categoryCtrl.text.trim();
-    if (title.isEmpty || category.isEmpty) return;
+    if (title.isEmpty || category.isEmpty || _videoIdCtrl.text.trim().isEmpty) return;
 
     await LiveBackendService.instance.addMovie(LiveMovie(
       id: 'm_${DateTime.now().millisecondsSinceEpoch}',
@@ -100,11 +106,39 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
       isPublished: _publishStatus == 'Published',
       isFeatured: _isFeatured,
       year: _yearCtrl.text.trim(),
+      synopsis: _synopsisCtrl.text.trim(),
+      contentType: _contentType,
+      sourceProvider: _sourceProvider,
+      sourceUrl: _videoIdCtrl.text.trim(),
+      playlistIds: [
+        if (_isFeatured) 'featured',
+        if (_isTrending) 'trending',
+        if (_isTop10) 'top10',
+      ],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     ));
 
     Navigator.pop(context);
+  }
+
+  Future<void> _uploadAsset(bool isPoster) async {
+    final selection = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+    final file = selection?.files.single;
+    if (file?.bytes == null) return;
+    setState(() => _uploadingAsset = true);
+    try {
+      final extension = file!.extension?.toLowerCase() ?? 'jpg';
+      final id = 'm_${DateTime.now().millisecondsSinceEpoch}';
+      final url = isPoster
+          ? await AdminStorageService().uploadMoviePoster(bytes: file.bytes!, movieId: id, extension: extension)
+          : await AdminStorageService().uploadMovieBanner(bytes: file.bytes!, movieId: id, extension: extension);
+      if (mounted) setState(() => isPoster ? _posterCtrl.text = url : _bannerCtrl.text = url);
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $error')));
+    } finally {
+      if (mounted) setState(() => _uploadingAsset = false);
+    }
   }
 
   @override
@@ -318,11 +352,27 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
         children: [
           Text('Step 2: Categories & Playlists', style: AppTextStyles.h3()),
           const SizedBox(height: 16),
-          TextField(
-            controller: _categoryCtrl,
-            decoration: const InputDecoration(
-                labelText: 'Primary Category',
-                hintText: 'e.g. Sci-Fi, Action, Drama'),
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance.collection('categories').snapshots(),
+            builder: (context, snapshot) {
+              final categories = snapshot.data?.docs
+                      .map((d) => d.data()['name'] as String? ?? '')
+                      .where((name) => name.isNotEmpty).toList() ?? const <String>[];
+              return DropdownButtonFormField<String>(
+                value: categories.contains(_categoryCtrl.text) ? _categoryCtrl.text : null,
+                decoration: const InputDecoration(labelText: 'Primary Category *'),
+                hint: Text(categories.isEmpty ? 'Create categories in Categories first' : 'Select a category'),
+                items: categories.map((name) => DropdownMenuItem(value: name, child: Text(name))).toList(),
+                onChanged: categories.isEmpty ? null : (value) => setState(() => _categoryCtrl.text = value ?? ''),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _contentType,
+            decoration: const InputDecoration(labelText: 'Content type'),
+            items: const [DropdownMenuItem(value: 'movie', child: Text('Movie')), DropdownMenuItem(value: 'series', child: Text('Series'))],
+            onChanged: (value) => setState(() => _contentType = value ?? 'movie'),
           ),
           const SizedBox(height: 24),
           Text('Playlist Feature Toggles', style: AppTextStyles.h4()),
@@ -361,17 +411,9 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           Text('Step 3: Media Assets & Live Preview',
               style: AppTextStyles.h3()),
           const SizedBox(height: 16),
-          TextField(
-            controller: _posterCtrl,
-            decoration: const InputDecoration(
-                labelText: 'Poster Image URL (2:3 Aspect Ratio)'),
-          ),
+          TextField(controller: _posterCtrl, decoration: InputDecoration(labelText: 'Poster image URL (2:3)', suffixIcon: IconButton(icon: const Icon(Icons.upload), onPressed: _uploadingAsset ? null : () => _uploadAsset(true)))),
           const SizedBox(height: 16),
-          TextField(
-            controller: _bannerCtrl,
-            decoration: const InputDecoration(
-                labelText: 'Banner / Backdrop URL (16:9 Aspect Ratio)'),
-          ),
+          TextField(controller: _bannerCtrl, decoration: InputDecoration(labelText: 'Banner / backdrop URL (16:9)', suffixIcon: IconButton(icon: const Icon(Icons.upload), onPressed: _uploadingAsset ? null : () => _uploadAsset(false)))),
           const SizedBox(height: 24),
           Text('Live Asset Preview Card', style: AppTextStyles.h4()),
           const SizedBox(height: 12),
@@ -430,11 +472,20 @@ class _ContentWizardDialogState extends State<ContentWizardDialog> {
           Text('Step 4: Video Player & Stream Sources',
               style: AppTextStyles.h3()),
           const SizedBox(height: 16),
-          TextField(
-            controller: _videoIdCtrl,
-            decoration: const InputDecoration(
-                labelText: 'Dailymotion / HLS Video Stream ID *'),
+          DropdownButtonFormField<String>(
+            value: _sourceProvider,
+            decoration: const InputDecoration(labelText: 'Playback source *'),
+            items: const [
+              DropdownMenuItem(value: 'youtube', child: Text('YouTube')),
+              DropdownMenuItem(value: 'dailymotion', child: Text('Dailymotion')),
+              DropdownMenuItem(value: 'hls', child: Text('HLS (.m3u8)')),
+              DropdownMenuItem(value: 'dash', child: Text('MPEG-DASH (.mpd)')),
+              DropdownMenuItem(value: 'mp4', child: Text('Direct MP4')),
+            ],
+            onChanged: (value) => setState(() => _sourceProvider = value ?? 'youtube'),
           ),
+          const SizedBox(height: 16),
+          TextField(controller: _videoIdCtrl, decoration: InputDecoration(labelText: _sourceProvider == 'youtube' || _sourceProvider == 'dailymotion' ? 'Video ID or full URL *' : 'Stream URL *')),
           const SizedBox(height: 16),
           TextField(
             controller: _trailerIdCtrl,
