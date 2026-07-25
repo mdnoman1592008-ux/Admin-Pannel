@@ -20,6 +20,10 @@
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
 
+# Facebook Login plugin and Android SDK.
+-keep class com.facebook.** { *; }
+-keepattributes Signature
+
 # Supabase Storage Rules
 -keep class io.supabase.** { *; }
 

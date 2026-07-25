@@ -1,0 +1,4 @@
+# Never commit real production values. Copy these entries to android/gradle.properties
+# on the build machine or provide them with -P arguments during release builds.
+FACEBOOK_APP_ID=your_facebook_app_id
+FACEBOOK_CLIENT_TOKEN=your_facebook_client_token

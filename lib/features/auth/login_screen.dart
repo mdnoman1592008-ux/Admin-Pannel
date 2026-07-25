@@ -9,6 +9,7 @@ import '../profile/avatar_selection/avatar_selection_screen.dart';
 import '../profile/profile_selection/profile_selection_screen.dart';
 import '../main/main_screen.dart';
 import 'register_screen.dart';
+import 'email_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
@@ -25,7 +26,6 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _showEmailInputs = false;
   String? _errorMessage;
 
   late AnimationController _rotationController;
@@ -303,6 +303,19 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  Future<void> _openEmailLogin() async {
+    final user = await Navigator.of(context).push<UserDocument>(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 350),
+        pageBuilder: (_, animation, __) => FadeTransition(
+          opacity: animation,
+          child: const EmailLoginScreen(),
+        ),
+      ),
+    );
+    if (user != null && mounted) _navigatePostLogin(user);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -462,35 +475,12 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 20),
 
-                        // Email Input Drawer (Expandable when Sign In is clicked)
-                        if (_showEmailInputs) ...[
-                          _buildEmailInputFields(),
-                          const SizedBox(height: 14),
-                        ],
-
-                        // Primary Button: Sign In with Email
+                        // Email sign-in is intentionally a dedicated screen.
                         GlassPrimaryButton(
                           label: 'Sign In with Email',
                           icon: Icons.login_rounded,
-                          onPressed: () {
-                            if (!_showEmailInputs) {
-                              setState(() {
-                                _showEmailInputs = true;
-                              });
-                            } else {
-                              _handleEmailLogin();
-                            }
-                          },
+                          onPressed: _isLoading ? () {} : _openEmailLogin,
                         ),
-                        if (_showEmailInputs)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed:
-                                  _isLoading ? null : _showForgotPasswordDialog,
-                              child: const Text('Forgot password?'),
-                            ),
-                          ),
                         const SizedBox(height: 20),
 
                         // Bottom Link: Don't have an account? Sign Up

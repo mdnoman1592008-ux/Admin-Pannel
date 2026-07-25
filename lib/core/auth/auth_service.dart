@@ -67,4 +67,8 @@ class AuthService {
   Future<void> sendPasswordResetEmail(String email) {
     return _authRepository.sendPasswordResetEmail(email);
   }
+
+  Future<void> sendEmailVerification() => _authRepository.sendEmailVerification();
+
+  Future<bool> isCurrentEmailVerified() => _authRepository.isCurrentEmailVerified();
 }

@@ -19,9 +19,11 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await NotificationService.initialize();
   EnvironmentConfig.setEnvironment(Environment.prod);
-  await SupabaseInitializer.initialize();
+  await Future.wait([
+    NotificationService.initialize(),
+    SupabaseInitializer.initialize(),
+  ]);
   AppLogger.i('AppInit', 'Ether Cinema Enterprise & Supabase initialized in PROD environment.');
 
   runApp(const ProviderScope(child: EtherCinemaApp()));

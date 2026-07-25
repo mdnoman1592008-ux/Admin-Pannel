@@ -183,6 +183,11 @@ class AuthRepository {
           _activeProfile = null;
           return Stream.value(null);
         }
+        final isEmailPasswordAccount = user.providerData
+            .any((provider) => provider.providerId == 'password');
+        if (isEmailPasswordAccount && !user.emailVerified) {
+          return Stream.value(null);
+        }
         return _userReference(user.uid).snapshots().asyncMap((snapshot) async {
           final document = snapshot.exists
               ? UserDocument.fromFirestore(user.uid, snapshot.data()!)
@@ -239,6 +244,11 @@ class AuthRepository {
       final user = credential.user;
       if (user == null)
         throw const AuthException('Sign-in did not return a user.');
+      if (!user.emailVerified) {
+        await user.sendEmailVerification();
+        throw const AuthException(
+            'Verify your email before signing in. A new verification link was sent.');
+      }
       final document =
           await _loadOrCreateUser(user, 'email', _fallbackName(user));
       _sendEmailSafely(() => _emailService.sendLoginAlert(
@@ -306,6 +316,19 @@ class AuthRepository {
       throw _fromFirebaseAuthError(error,
           fallback: 'Unable to send the password reset email.');
     }
+  }
+
+  Future<void> sendEmailVerification() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) throw const AuthException('No signed-in account to verify.');
+    await user.sendEmailVerification();
+  }
+
+  Future<bool> isCurrentEmailVerified() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) return false;
+    await user.reload();
+    return _firebaseAuth.currentUser?.emailVerified ?? false;
   }
 
   Future<UserDocument> signInAnonymously() async {

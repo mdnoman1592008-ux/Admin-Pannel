@@ -47,17 +47,14 @@ class NotificationService {
 
   static Future<void> initialize() async {
     final messaging = FirebaseMessaging.instance;
-    
-    // Request permission (mostly for iOS, Android uses PermissionHandler directly now)
-    await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
 
-    // Get the FCM token for this device
-    final token = await messaging.getToken();
-    AppLogger.i('NotificationService', 'FCM Token: $token');
+    // Permission is requested after a user signs in. Do not block startup on a
+    // system dialog or an FCM network round-trip.
+    unawaited(messaging.getToken().then((token) {
+      AppLogger.i('NotificationService', 'FCM token available: ${token != null}');
+    }).catchError((Object error) {
+      AppLogger.e('NotificationService', 'FCM token unavailable: $error');
+    }));
 
     // Handle foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {

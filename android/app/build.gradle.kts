@@ -20,6 +20,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        val facebookAppId = (project.findProperty("FACEBOOK_APP_ID") as String?) ?: ""
+        val facebookClientToken = (project.findProperty("FACEBOOK_CLIENT_TOKEN") as String?) ?: ""
+        resValue("string", "facebook_app_id", facebookAppId)
+        resValue("string", "fb_login_protocol_scheme", "fb$facebookAppId")
+        manifestPlaceholders["FACEBOOK_CLIENT_TOKEN"] = facebookClientToken
     }
 
     buildTypes {

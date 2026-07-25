@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/auth/auth_service.dart';
 import '../onboarding/onboarding_widgets.dart';
+import 'email_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final VoidCallback? onRegisterSuccess;
@@ -53,15 +54,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      final user = await _authService.registerWithEmailPassword(name, email, password);
+      await _authService.registerWithEmailPassword(name, email, password);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Account created successfully! Welcome, ${name.isNotEmpty ? name : user.displayName}.'),
-            backgroundColor: const Color(0xFF00CFFF),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(
+              onVerified: widget.onRegisterSuccess,
+            ),
           ),
         );
-        widget.onRegisterSuccess?.call();
       }
     } catch (e) {
       if (mounted) {
